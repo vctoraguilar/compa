@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "798175139476",
+    "project_id": "compa-app",
+    "storage_bucket": "compa-app.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:798175139476:android:f0af8957dedf3998964681",
+        "android_client_info": {
+          "package_name": "com.rasgo.compa"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "798175139476-ugd99ctrdru2gleto1liv2v7fkuvifl1.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.rasgo.compa",
+            "certificate_hash": "c95d5efeb31f53c24f7103f529e3371bb654572f"
+          }
+        },
+        {
+          "client_id": "798175139476-84v0l0tv843l02loa5d5f2go45c4suq9.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBwdzzDxcwlz7Tqvfu4dK7IosZFpjcO-Iw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "798175139476-84v0l0tv843l02loa5d5f2go45c4suq9.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
