@@ -1,4 +1,6 @@
 <resources>
     <string name="app_name">Compa</string>
     <string name="default_web_client_id">798175139476-84v0l0tv843l02loa5d5f2go45c4suq9.apps.googleusercontent.com</string>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
 </resources>

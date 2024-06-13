@@ -23,4 +23,9 @@ public class AuthResponse {
     public int getStatus(){
         return status;
     }
+
+    public AuthResponse(String message, int status) {
+        this.message = message;
+        this.status = status;
+    }
 }
