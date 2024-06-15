@@ -97,4 +97,12 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"/>
 
+    <Button
+        android:id="@+id/btn_logout"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Cerrar sesión"
+        android:layout_gravity="bottom|center_horizontal"
+        android:layout_marginBottom="16dp"/>
+
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

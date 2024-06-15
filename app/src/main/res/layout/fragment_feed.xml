@@ -1,24 +1,177 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     tools:context=".feature.homepage.feed.FeedFragment">
 
-    <!-- TODO: Update blank fragment layout -->
-    <TextView
+    <LinearLayout
+        android:id="@+id/searchBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="6dp">
+
+        <EditText
+            android:id="@+id/searchEditText"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:padding="8dp"
+            android:background="@null" />
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:src="@drawable/ic_search"
+            android:layout_gravity="center_vertical" />
+
+    </LinearLayout>
+
+    <!-- Section titles -->
+    <LinearLayout
+        android:id="@+id/sectionTitles"
+        android:layout_below="@id/searchBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginTop="16dp">
+
+        <TextView
+            android:id="@+id/encuentraCompas"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="8dp"
+            android:textAlignment="center"
+            android:text="Encuentra compas"
+            android:textSize="18sp"
+            android:background="@color/colorPrimaryDark"
+            android:textColor="@android:color/white"
+            android:layout_gravity="center_vertical"
+            android:layout_marginLeft="16dp"
+            android:layout_marginRight="16dp"
+            tools:ignore="RtlCompat" />
+    </LinearLayout>
+
+    <ScrollView
+        android:layout_below="@id/sectionTitles"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:text="@string/hello_blank_fragment" />
+        android:layout_marginTop="16dp"
+        android:scrollbars="none">
+        <!-- User cards -->
+        <GridLayout
+            android:id="@+id/misCompas"
+            android:layout_below="@id/sectionTitles"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:columnCount="2"
+            android:rowCount="50"
 
-    <Button
-        android:id="@+id/btn_logout"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Cerrar sesión"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"/>
-</FrameLayout>
+            android:orientation="horizontal"
+            tools:ignore="NotSibling"
+            android:padding="16dp">
+
+            <!-- Card 1 -->
+            <androidx.cardview.widget.CardView
+                android:layout_width="168dp"
+                android:layout_height="250dp"
+                android:layout_row="0"
+                android:layout_column="0"
+                android:layout_margin="8dp"
+                app:cardElevation="8dp"
+                app:cardCornerRadius="8dp"
+                android:background="@drawable/card_background">
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <androidx.cardview.widget.CardView
+                        android:layout_width="120dp"
+                        app:cardCornerRadius="60dp"
+                        android:layout_gravity="bottom|center"
+                        android:layout_height="120dp">
+                        <ImageView
+                            android:layout_width="120dp"
+                            android:layout_height="120dp"
+                            android:layout_gravity="center_horizontal"
+                            android:scaleType="centerCrop"
+                            android:src="@drawable/user" />
+                    </androidx.cardview.widget.CardView>
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:gravity="center"
+                        android:text="Cecilia Marquez"
+                        android:textColor="@android:color/primary_text_light"
+                        android:textSize="16sp"/>
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:gravity="center"
+                        android:text="Distribuidora Ropa Gamarra"
+                        android:textColor="@android:color/black"
+                        android:textSize="14sp" />
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+            <!-- Card 2 -->
+            <androidx.cardview.widget.CardView
+                android:layout_width="168dp"
+                android:layout_height="250dp"
+                android:layout_row="0"
+                android:layout_column="1"
+                android:layout_margin="8dp"
+                app:cardElevation="8dp"
+                app:cardCornerRadius="8dp"
+                android:background="@drawable/card_background">
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <androidx.cardview.widget.CardView
+                        android:layout_width="120dp"
+                        app:cardCornerRadius="60dp"
+                        android:layout_gravity="bottom|center"
+                        android:layout_height="120dp">
+                        <ImageView
+                            android:layout_width="120dp"
+                            android:layout_height="120dp"
+                            android:layout_gravity="center_horizontal"
+                            android:scaleType="centerCrop"
+                            android:src="@drawable/user" />
+                    </androidx.cardview.widget.CardView>
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:gravity="center"
+                        android:text="Roberto Bracamonte"
+                        android:textColor="@android:color/black"
+                        android:textSize="16sp" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:gravity="center"
+                        android:text="Distribuidora Ropa Gamarra"
+                        android:textColor="@android:color/black"
+                        android:textSize="14sp" />
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+        </GridLayout>
+    </ScrollView>
+
+</RelativeLayout>

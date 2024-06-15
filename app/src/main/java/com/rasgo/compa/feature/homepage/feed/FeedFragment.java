@@ -1,17 +1,29 @@
 package com.rasgo.compa.feature.homepage.feed;
 
+import static android.content.ContentValues.TAG;
+
 import android.content.Intent;
+import android.graphics.Color;
 import android.os.Bundle;
 
+import androidx.cardview.widget.CardView;
 import androidx.fragment.app.Fragment;
 
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.GridLayout;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.TextView;
 import android.widget.Toast;
 
+import com.bumptech.glide.Glide;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.rasgo.compa.R;
 import com.rasgo.compa.feature.auth.LoginActivity;
 import com.rasgo.compa.feature.homepage.MainActivity;
@@ -25,6 +37,8 @@ import com.rasgo.compa.feature.homepage.MainActivity;
 
 public class FeedFragment extends Fragment {
 
+    private FirebaseFirestore db;
+    private GridLayout misCompasGrid;
     // TODO: Rename parameter arguments, choose names that match
     // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
     private static final String ARG_PARAM1 = "param1";
@@ -78,22 +92,86 @@ public class FeedFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View root = inflater.inflate(R.layout.fragment_feed, container,false);
-        // Inflate the layout for this fragment
 
-        btnLogout = root.findViewById(R.id.btn_logout);
-        btnLogout.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                FirebaseAuth.getInstance().signOut();
-                Intent intent = new Intent(getActivity().getApplicationContext(), LoginActivity.class);
-                intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-                startActivity(intent);
-                Toast.makeText(getActivity().getApplicationContext(), "Sesión cerrada", Toast.LENGTH_LONG).show();
-            }
+        misCompasGrid = root.findViewById(R.id.misCompas);
 
-        });
+        // Inicializar Firestore
+        db = FirebaseFirestore.getInstance();
+        db.collection("users")
+                .get()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        for (QueryDocumentSnapshot document : task.getResult()) {
+                            // Obtener datos del usuario
+                            String userName = document.getString("displayName");
+                            String userPhotoUrl = document.getString("photoUrl");
+
+                            // Crear y configurar CardView
+                            CardView cardView = createCardView(userName, userPhotoUrl);
+                            misCompasGrid.addView(cardView);
+                        }
+                    } else {
+                        Log.d(TAG, "Error obteniendo documentos: ", task.getException());
+                    }
+                });
 
         return root;
 
+    }
+
+    private CardView createCardView(String userName, String userPhotoUrl) {
+        CardView cardView = new CardView(requireContext());
+        LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+        );
+        layoutParams.setMargins(16, 16, 16, 16);
+        cardView.setLayoutParams(layoutParams);
+        cardView.setCardElevation(8); // Elevación de la tarjeta
+        cardView.setRadius(8); // Radio de los bordes de la tarjeta
+
+        // Layout interno de la tarjeta (LinearLayout vertical)
+        LinearLayout innerLayout = new LinearLayout(requireContext());
+        innerLayout.setOrientation(LinearLayout.VERTICAL);
+        innerLayout.setLayoutParams(new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+        ));
+        innerLayout.setPadding(16, 16, 16, 16);
+
+        // ImageView para la foto del usuario
+        ImageView imageView = new ImageView(requireContext());
+        LinearLayout.LayoutParams imageParams = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+        );
+        imageView.setLayoutParams(imageParams);
+        imageView.setScaleType(ImageView.ScaleType.CENTER_CROP);
+
+        // Cargar imagen usando Glide (asegúrate de agregar la dependencia de Glide en build.gradle)
+        Glide.with(this)
+                .load(userPhotoUrl)
+//                .placeholder(R.drawable.placeholder) // Placeholder si la imagen tarda en cargar
+//                .error(R.drawable.error_image) // Imagen de error si no se puede cargar la imagen
+                .into(imageView);
+
+        // TextView para el nombre del usuario
+        TextView textView = new TextView(requireContext());
+        textView.setLayoutParams(new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+        ));
+        textView.setText(userName);
+        textView.setTextSize(16);
+        textView.setTextColor(Color.BLACK);
+
+        // Agregar imageView y textView al innerLayout
+        innerLayout.addView(imageView);
+        innerLayout.addView(textView);
+
+        // Agregar innerLayout al cardView
+        cardView.addView(innerLayout);
+
+        return cardView;
     }
 }
