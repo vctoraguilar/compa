@@ -57,7 +57,7 @@
             <androidx.appcompat.widget.AppCompatButton
                 android:id="@+id/profile_action_btn"
                 android:layout_gravity="bottom|end"
-                android:text="Editar"
+                android:text="Editar Perfil"
                 android:background="@android:color/transparent"
                 android:textAllCaps="false"
                 android:minWidth="0dp"
@@ -97,12 +97,14 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"/>
 
+
+
     <Button
         android:id="@+id/btn_logout"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Cerrar sesión"
         android:layout_gravity="bottom|center_horizontal"
-        android:layout_marginBottom="16dp"/>
+        android:layout_marginBottom="50dp"/>
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
