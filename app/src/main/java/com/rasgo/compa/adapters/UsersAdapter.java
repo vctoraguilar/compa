@@ -57,12 +57,12 @@ public class UsersAdapter extends RecyclerView.Adapter<UsersAdapter.ViewHolder> 
         holder.itemView.setOnClickListener(View -> {
            if (firebaseUser != null) {
                Intent intent = new Intent(context,ProfileActivity.class);
-               intent.putExtra("user",user.getUserId());
-               intent.putExtra("state", firebaseUser.getUid().equals(user.getUserId()) ? 5 : 4); // 5 si es el usuario actual, 4 si es otro usuario
-
-               //int state = getState(user, firebaseUser);
-//               int state = 4;
-//               intent.putExtra("state", state);
+               intent.putExtra("idUsuario", user.getUserId());
+               intent.putExtra("name", user.getDisplayName());
+               intent.putExtra("businessName", user.getBusinessName());
+               intent.putExtra("descripcion", user.getBusinessDescription());
+               intent.putExtra("photoUrl", user.getPhotoUrl());
+               intent.putExtra("businessEmail", user.getBusinessEmail());
                context.startActivity(intent);
            } else {
                Toast.makeText(context, "Error al mostrar usuarios", Toast.LENGTH_SHORT).show();

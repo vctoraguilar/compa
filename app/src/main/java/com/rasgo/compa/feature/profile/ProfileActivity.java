@@ -2,6 +2,7 @@ package com.rasgo.compa.feature.profile;
 
 import static android.content.ContentValues.TAG;
 
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
@@ -33,6 +34,8 @@ import com.rasgo.compa.feature.auth.LoginActivity;
 import com.rasgo.compa.adapters.BusinessInfoAdapter;
 import com.rasgo.compa.model.user.user;
 
+import java.text.BreakIterator;
+import java.text.StringCharacterIterator;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -62,12 +65,22 @@ public class ProfileActivity extends AppCompatActivity {
 
     private List<String> businessInfoList = new ArrayList<>();
 
+    public String idUsuario;
+    public String nombreUsuario;
+    public String urlImagen;
+    public int state=0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_profile);
+
+        idUsuario = getIntent().getStringExtra("idUsuario");
+        nombreUsuario = getIntent().getStringExtra("name");
+        urlImagen = getIntent().getStringExtra("photoUrl");
+
+
 
         profileImage = findViewById(R.id.profile_image);
         toolbar = findViewById(R.id.toolbar_bar);
@@ -91,13 +104,13 @@ public class ProfileActivity extends AppCompatActivity {
 
         Intent intent = getIntent();
         String userId = intent.getStringExtra("user");
-        int state = intent.getIntExtra("state", -1);
+        state = intent.getIntExtra("state", -1);
 
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         adapter = new BusinessInfoAdapter(this, businessInfoList);
         recyclerView.setAdapter(adapter);
 
-        loadUserProfile(userId);
+        //loadUserProfile(userId);
 
         switch (state) {
             case 0:
@@ -251,18 +264,27 @@ public class ProfileActivity extends AppCompatActivity {
                         if (task.isSuccessful()) {
                             DocumentSnapshot document = task.getResult();
                             if (document.exists()) {
-                                Log.d(TAG, document.getId() + " => " + document.getData());
-                                String ToolbarTitle = document.getString("displayName");
-                                String ProfileImage = document.getString("photoUrl");
-                                if (ToolbarTitle != null && !ToolbarTitle.isEmpty()) {
-                                    String firstName = ToolbarTitle.split(" ")[0];
-                                    collapsingToolbarLayout.setTitle(firstName);
-                                }
-                                if (ProfileImage != null) {
+                                if (currentUser != null && idUsuario.equals(currentUser.getUid())) {
+                                    Log.d(TAG, document.getId() + " => " + document.getData());
+                                    String ToolbarTitle = document.getString("displayName");
+                                    String ProfileImage = document.getString("photoUrl");
+                                    if (ToolbarTitle != null && !ToolbarTitle.isEmpty()) {
+                                        String firstName = ToolbarTitle.split(" ")[0];
+                                        collapsingToolbarLayout.setTitle(firstName);
+                                    }
+                                    if (ProfileImage != null) {
+                                        Glide.with(this)
+                                                .load(ProfileImage)
+                                                .into(profileImage);
+                                    }
+                                } else {
+                                    collapsingToolbarLayout.setTitle(nombreUsuario);
                                     Glide.with(this)
-                                            .load(ProfileImage)
+                                            .load(urlImagen)
                                             .into(profileImage);
+
                                 }
+
                             } else {
                                 Log.d(TAG, "No se encontró documento para el usuario actual");
                             }
@@ -334,26 +356,27 @@ public class ProfileActivity extends AppCompatActivity {
 //        }
 //    }
 
-    private void loadUserProfile(String userId) {
-        db.collection("users").document(userId).get().addOnCompleteListener(task -> {
-            if (task.isSuccessful()) {
-                DocumentSnapshot document = task.getResult();
-                if (document.exists()) {
-                    user user = document.toObject(user.class);
-                    if (user != null) {
-//                        displayName.setText(user.getDisplayName());
-//                        businessName.setText(user.getBusinessName());
-                        businessInfoList.clear();
-                        businessInfoList.addAll(user.getBusinessInfo()); // Suponiendo que user tiene un método getBusinessInfo()
-                        adapter.notifyDataSetChanged();
+//    private void loadUserProfile(String userId) {
+//        db.collection("users").document(userId).get().addOnCompleteListener(task -> {
+//            if (task.isSuccessful()) {
+//                DocumentSnapshot document = task.getResult();
+//                if (document.exists()) {
+//                    user user = document.toObject(user.class);
+//                    if (user != null) {
+//
+////                       displayName.setText(user.getDisplayName());
+////                       businessName.setText(user.getBusinessName());
+////                        businessInfoList.clear();
+////                        businessInfoList.addAll(user.getBusinessInfo()); // Suponiendo que user tiene un método getBusinessInfo()
+////                        adapter.notifyDataSetChanged();
 //                        Glide.with(this).load(user.getPhotoUrl()).into(profileImage);
-                    }
-                } else {
-                    Toast.makeText(this, "El usuario no existe", Toast.LENGTH_SHORT).show();
-                }
-            } else {
-                Toast.makeText(this, "Error al cargar el perfil", Toast.LENGTH_SHORT).show();
-            }
-        });
-    }
+//                    }
+//                } else {
+//                    Toast.makeText(this, "El usuario no existe", Toast.LENGTH_SHORT).show();
+//                }
+//            } else {
+//                Toast.makeText(this, "Error al cargar el perfil", Toast.LENGTH_SHORT).show();
+//            }
+//        });
+//    }
 }
