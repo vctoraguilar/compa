@@ -284,7 +284,6 @@ public class ProfileActivity extends AppCompatActivity {
                                             .into(profileImage);
 
                                 }
-
                             } else {
                                 Log.d(TAG, "No se encontró documento para el usuario actual");
                             }

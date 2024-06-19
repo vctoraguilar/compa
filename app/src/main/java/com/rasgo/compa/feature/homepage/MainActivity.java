@@ -30,13 +30,14 @@ import com.rasgo.compa.feature.homepage.feed.FeedFragment;
 import com.rasgo.compa.feature.homepage.notification.NotificationFragment;
 import com.rasgo.compa.feature.homepage.settings.SettingsFragment;
 import com.rasgo.compa.feature.profile.ProfileActivity;
+import com.rasgo.compa.model.user.user;
 
 public class MainActivity extends AppCompatActivity {
 
     private BottomNavigationView bottomNavigationView;
     private FirebaseFirestore db;
     private FirebaseAuth mAuth;
-
+    public user usuario;
     private static final String TAG="MainActivity";
     ImageButton profileButton;
 
@@ -59,7 +60,8 @@ public class MainActivity extends AppCompatActivity {
         profileButton.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(MainActivity.this, ProfileActivity.class).putExtra("uid", FirebaseAuth.getInstance().getUid());
+
+                Intent intent = new Intent(MainActivity.this, ProfileActivity.class).putExtra("idUsuario", FirebaseAuth.getInstance().getUid());
                 startActivity(intent);
             }
         });
