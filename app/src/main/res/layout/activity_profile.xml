@@ -2,7 +2,7 @@
 <androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/main"
+    android:id="@+id/register"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".feature.profile.ProfileActivity">
@@ -38,7 +38,9 @@
                     android:adjustViewBounds="true"
                     android:src="@color/white"
                     android:layout_width="match_parent"
-                    android:layout_height="370dp"/>
+                    android:layout_height="370dp"
+                    android:onClick="openImagePicker"
+                    />
 
 
             <androidx.cardview.widget.CardView
@@ -51,7 +53,9 @@
                     android:scaleType="centerCrop"
                     android:src="@drawable/user"
                     android:layout_width="match_parent"
-                    android:layout_height="match_parent"/>
+                    android:layout_height="match_parent"
+                    android:onClick="openImagePicker"
+                     />
             </androidx.cardview.widget.CardView>
             
             <androidx.appcompat.widget.AppCompatButton

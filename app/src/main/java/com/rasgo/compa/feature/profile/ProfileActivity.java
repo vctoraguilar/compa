@@ -2,11 +2,20 @@ package com.rasgo.compa.feature.profile;
 
 import static android.content.ContentValues.TAG;
 
+import static androidx.core.content.ContentProviderCompat.requireContext;
+import static com.google.android.material.internal.ContextUtils.getActivity;
+import static java.security.AccessController.getContext;
+
+import android.Manifest;
+import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.webkit.MimeTypeMap;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
@@ -15,8 +24,10 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
+import androidx.core.app.ActivityCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -24,27 +35,42 @@ import com.bumptech.glide.Glide;
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInClient;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.Task;
 import com.google.android.material.appbar.CollapsingToolbarLayout;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
+import com.google.firebase.storage.StorageTask;
+import com.google.firebase.storage.UploadTask;
 import com.rasgo.compa.R;
 import com.rasgo.compa.feature.auth.LoginActivity;
 import com.rasgo.compa.adapters.BusinessInfoAdapter;
+
 import com.rasgo.compa.model.user.user;
 
 import java.text.BreakIterator;
 import java.text.StringCharacterIterator;
 import java.util.ArrayList;
 import java.util.List;
+import androidx.core.content.ContextCompat;
 
 public class ProfileActivity extends AppCompatActivity {
+
+    // Imagenes
+    private static final int REQUEST_IMAGE_PICKER_PROFILE = 100;
+    private static final int REQUEST_IMAGE_PICKER_COVER = 101;
+    private static final int STORAGE_PERMISSION_CODE=102;
 
     private String uid="",profileUrl="", coverUrl="";
     private int current_state=0;
     private Button btnLogout;
-
+    private static final int IMAGE_REQUEST=1;
 
     /*
         0=perfil cargando
@@ -70,6 +96,14 @@ public class ProfileActivity extends AppCompatActivity {
     public String urlImagen;
     public int state=0;
 
+    private DocumentReference reference;
+    private StorageReference storageReference;
+    private FirebaseUser fuser;
+    private Uri imageUri;
+    private Uri coverImageUri;
+    private StorageTask uploadTask;
+    private String mUri;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -79,10 +113,26 @@ public class ProfileActivity extends AppCompatActivity {
         idUsuario = getIntent().getStringExtra("idUsuario");
         nombreUsuario = getIntent().getStringExtra("name");
         urlImagen = getIntent().getStringExtra("photoUrl");
-
-
-
+        fuser = FirebaseAuth.getInstance().getCurrentUser();
         profileImage = findViewById(R.id.profile_image);
+        coverImage = findViewById(R.id.profile_cover);
+        coverImage.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                openCoverGallery();
+            }
+        });
+
+        reference = FirebaseFirestore.getInstance().collection("users").document(fuser.getUid());
+        storageReference = FirebaseStorage.getInstance().getReference("uploads");
+
+        profileImage.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                openGallery();
+            }
+        });
+
         toolbar = findViewById(R.id.toolbar_bar);
 
         profileOptionButton = findViewById(R.id.profile_action_btn);
@@ -142,8 +192,6 @@ public class ProfileActivity extends AppCompatActivity {
         }
 
 
-
-
         setSupportActionBar(toolbar);
         readProfile();
         loadBusinessInfo();
@@ -174,6 +222,221 @@ public class ProfileActivity extends AppCompatActivity {
             }
         });
     }
+
+    private void openCoverGallery() {
+        Intent intent = new Intent();
+        intent.setType("image/*");
+        intent.setAction(Intent.ACTION_GET_CONTENT);
+        startActivityForResult(intent, REQUEST_IMAGE_PICKER_COVER);
+    }
+
+    private void openGallery() {
+        Intent intent = new Intent();
+        intent.setType("image/*");
+        intent.setAction(Intent.ACTION_GET_CONTENT);
+        startActivityForResult(intent, IMAGE_REQUEST);
+    }
+    private String getFileExtension(Uri uri) {
+        ContentResolver contentResolver = getContentResolver();
+        MimeTypeMap mimeTypeMap = MimeTypeMap.getSingleton();
+        return mimeTypeMap.getExtensionFromMimeType(contentResolver.getType(uri));
+    }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        user updateUser = new user();
+
+        if (requestCode == IMAGE_REQUEST && resultCode == RESULT_OK && data != null && data.getData() != null) {
+            imageUri = data.getData();
+            if (uploadTask != null && uploadTask.isInProgress()) {
+                Toast.makeText(ProfileActivity.this, "Subiendo", Toast.LENGTH_SHORT).show();
+            } else {
+                uploadImage();
+            }
+        } else if (requestCode == REQUEST_IMAGE_PICKER_COVER && resultCode == RESULT_OK && data != null && data.getData() != null) {
+            coverImageUri = data.getData();
+            if (uploadTask != null && uploadTask.isInProgress()) {
+                Toast.makeText(ProfileActivity.this, "Subiendo", Toast.LENGTH_SHORT).show();
+            } else {
+                uploadCoverImage();
+            }
+        }
+    }
+
+    private void uploadCoverImage() {
+        if (coverImageUri != null) {
+            String fileExtension = getFileExtension(coverImageUri);
+            if (fileExtension == null) {
+                Toast.makeText(ProfileActivity.this, "Error obteniendo extensión de archivo", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            StorageReference fileReference = storageReference.child("cover_" + System.currentTimeMillis() + "." + fileExtension);
+            uploadTask = fileReference.putFile(coverImageUri)
+                    .addOnCompleteListener(new OnCompleteListener<UploadTask.TaskSnapshot>() {
+                        @Override
+                        public void onComplete(@NonNull Task<UploadTask.TaskSnapshot> task) {
+                            if (task.isSuccessful()) {
+                                fileReference.getDownloadUrl().addOnCompleteListener(new OnCompleteListener<Uri>() {
+                                    @Override
+                                    public void onComplete(@NonNull Task<Uri> task) {
+                                        if (task.isSuccessful()) {
+                                            Uri downloadUri = task.getResult();
+                                            if (downloadUri != null) {
+                                                String coverUri = downloadUri.toString();
+                                                updateCoverImageUrl(coverUri);
+                                            } else {
+                                                Toast.makeText(ProfileActivity.this, "Error obteniendo URL de descarga", Toast.LENGTH_SHORT).show();
+                                            }
+                                        } else {
+                                            Toast.makeText(ProfileActivity.this, "Error obteniendo URL de descarga", Toast.LENGTH_SHORT).show();
+                                        }
+                                    }
+                                });
+                            } else {
+                                Exception e = task.getException();
+                                if (e != null) {
+                                    Toast.makeText(ProfileActivity.this, "Upload failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                                    Log.e(TAG, "Upload failed", e);
+                                }
+                            }
+                        }
+                    })
+                    .addOnFailureListener(new OnFailureListener() {
+                        @Override
+                        public void onFailure(@NonNull Exception e) {
+                            Toast.makeText(ProfileActivity.this, "Upload failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                            Log.e(TAG, "Upload failed", e);
+                        }
+                    });
+        } else {
+            Toast.makeText(ProfileActivity.this, "No file selected", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void updateCoverImageUrl(String url) {
+        String userId = fuser.getUid();
+        db.collection("users").document(userId).update("coverUrl", url)
+                .addOnCompleteListener(new OnCompleteListener<Void>() {
+                    @Override
+                    public void onComplete(@NonNull Task<Void> task) {
+                        if (task.isSuccessful()) {
+                            Glide.with(ProfileActivity.this).load(url).into(coverImage);
+                            Toast.makeText(ProfileActivity.this, "Cover upload successful", Toast.LENGTH_SHORT).show();
+                            readProfile();
+                        } else {
+                            Toast.makeText(ProfileActivity.this, "Error actualizando URL de portada en Firestore", Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                });
+    }
+
+    private void uploadImage() {
+        if (imageUri != null) {
+            String fileExtension = getFileExtension(imageUri);
+            if (fileExtension == null) {
+                Toast.makeText(ProfileActivity.this, "Error obteniendo extensión de archivo", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            StorageReference fileReference = storageReference.child(System.currentTimeMillis() + "." + fileExtension);
+            uploadTask = fileReference.putFile(imageUri)
+                    .addOnCompleteListener(new OnCompleteListener<UploadTask.TaskSnapshot>() {
+                        @Override
+                        public void onComplete(@NonNull Task<UploadTask.TaskSnapshot> task) {
+                            if (task.isSuccessful()) {
+                                fileReference.getDownloadUrl().addOnCompleteListener(new OnCompleteListener<Uri>() {
+                                    @Override
+                                    public void onComplete(@NonNull Task<Uri> task) {
+                                        if (task.isSuccessful()) {
+                                            Uri downloadUri = task.getResult();
+                                            if (downloadUri != null) {
+                                                mUri = downloadUri.toString();
+                                                updateProfileImageUrl(mUri);
+                                            } else {
+                                                Toast.makeText(ProfileActivity.this, "Error obteniendo URL de descarga", Toast.LENGTH_SHORT).show();
+                                            }
+                                        } else {
+                                            Toast.makeText(ProfileActivity.this, "Error obteniendo URL de descarga", Toast.LENGTH_SHORT).show();
+                                        }
+                                    }
+                                });
+                            } else {
+                                Toast.makeText(ProfileActivity.this, "Upload failed", Toast.LENGTH_SHORT).show();
+                            }
+                        }
+                    })
+                    .addOnFailureListener(new OnFailureListener() {
+                        @Override
+                        public void onFailure(@NonNull Exception e) {
+                            Toast.makeText(ProfileActivity.this, "Upload failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                            Log.e(TAG, "Upload failed", e);
+                        }
+                    });
+        } else {
+            Toast.makeText(ProfileActivity.this, "No file selected", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+
+    private void updateProfileImageUrl(String url) {
+        String userId = fuser.getUid();
+        db.collection("users").document(userId).update("photoUrl", url)
+                .addOnCompleteListener(new OnCompleteListener<Void>() {
+                    @Override
+                    public void onComplete(@NonNull Task<Void> task) {
+                        if (task.isSuccessful()) {
+                            Glide.with(ProfileActivity.this).load(url).into(profileImage);
+                            Toast.makeText(ProfileActivity.this, "Upload successful", Toast.LENGTH_SHORT).show();
+                            readProfile();
+                        } else {
+                            Toast.makeText(ProfileActivity.this, "Error actualizando URL de imagen en Firestore", Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                });
+    }
+
+    private void readProfile() {
+        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        if (currentUser != null) {
+            String currentUserId = currentUser.getUid();
+            db = FirebaseFirestore.getInstance();
+            db.collection("users").document(currentUserId)
+                    .get()
+                    .addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
+                        @Override
+                        public void onComplete(@NonNull Task<DocumentSnapshot> task) {
+                            if (task.isSuccessful()) {
+                                DocumentSnapshot document = task.getResult();
+                                if (document.exists()) {
+                                    user duser = document.toObject(user.class);
+                                    if (duser != null) {
+                                        Log.d(TAG, document.getId() + " => " + document.getData());
+                                        String ToolbarTitle = document.getString("displayName");
+                                        String ProfileImage = document.getString("photoUrl");
+                                        if (ToolbarTitle != null && !ToolbarTitle.isEmpty()) {
+                                            String firstName = ToolbarTitle.split(" ")[0];
+                                            // Aquí asumes que tienes una referencia a un CollapsingToolbarLayout
+                                            // collapsingToolbarLayout.setTitle(firstName);
+                                        }
+                                        if (ProfileImage != null) {
+                                            Glide.with(ProfileActivity.this)
+                                                    .load(ProfileImage)
+                                                    .into(profileImage);
+                                        }
+                                    }
+                                } else {
+                                    Toast.makeText(ProfileActivity.this, "No se encontró documento para el usuario actual", Toast.LENGTH_SHORT).show();
+                                }
+                            } else {
+                                Toast.makeText(ProfileActivity.this, "Error obteniendo documento", Toast.LENGTH_SHORT).show();
+                            }
+                        }
+                    });
+        } else {
+            Toast.makeText(ProfileActivity.this, "No hay usuario autenticado", Toast.LENGTH_SHORT).show();
+        }
+    }
+
 
     private void sendFriendRequest(String userId) {
         Toast.makeText(this, "Solicitud de Compa enviada a " + userId, Toast.LENGTH_SHORT).show();
@@ -253,48 +516,6 @@ public class ProfileActivity extends AppCompatActivity {
     }
 
 
-    public void readProfile(){
-        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
-        if (currentUser != null) {
-            String currentUserId = currentUser.getUid();
-            db = FirebaseFirestore.getInstance();
-            db.collection("users").document(currentUserId)
-                    .get()
-                    .addOnCompleteListener(task -> {
-                        if (task.isSuccessful()) {
-                            DocumentSnapshot document = task.getResult();
-                            if (document.exists()) {
-                                if (currentUser != null && idUsuario.equals(currentUser.getUid())) {
-                                    Log.d(TAG, document.getId() + " => " + document.getData());
-                                    String ToolbarTitle = document.getString("displayName");
-                                    String ProfileImage = document.getString("photoUrl");
-                                    if (ToolbarTitle != null && !ToolbarTitle.isEmpty()) {
-                                        String firstName = ToolbarTitle.split(" ")[0];
-                                        collapsingToolbarLayout.setTitle(firstName);
-                                    }
-                                    if (ProfileImage != null) {
-                                        Glide.with(this)
-                                                .load(ProfileImage)
-                                                .into(profileImage);
-                                    }
-                                } else {
-                                    collapsingToolbarLayout.setTitle(nombreUsuario);
-                                    Glide.with(this)
-                                            .load(urlImagen)
-                                            .into(profileImage);
-
-                                }
-                            } else {
-                                Log.d(TAG, "No se encontró documento para el usuario actual");
-                            }
-                        } else {
-                            Log.d(TAG, "Error obteniendo documento: ", task.getException());
-                        }
-                    });
-        } else {
-            Log.d(TAG, "No hay usuario autenticado");
-        }
-    }
 //    private void checkFriendRequests() {
 //        db.collection("friendRequests").document(currentUser.getUid())
 //                .collection("sentRequests").document(userId)

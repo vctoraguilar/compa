@@ -14,9 +14,11 @@ import android.app.ProgressDialog;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
@@ -71,6 +73,7 @@ public class LoginActivity extends AppCompatActivity {
         progressDialog.setMessage("Iniciando Sesíón ...  ");
         //viewModel= new ViewModelProvider(this, new ViewModelFactory()).get(LoginViewModel.class);
         signInButton=findViewById(R.id.btn_GoogleInicio);
+        signInButton.setSize(SignInButton.SIZE_ICON_ONLY);
 
         //Configurando Google Sign In
         GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
@@ -88,6 +91,41 @@ public class LoginActivity extends AppCompatActivity {
             }
         });
 
+        //Login correo password
+        FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
+
+        if (firebaseUser != null){
+            Intent intent = new Intent(this, MainActivity.class);
+            startActivity(intent);
+            finish();
+        }
+        EditText etEmail = findViewById(R.id.et_username);
+        EditText etPassword = findViewById(R.id.et_password);
+        Button btnLogin = findViewById(R.id.btnLogIn);
+
+        btnLogin.setOnClickListener(v-> {
+            String txtEmail=etEmail.getText().toString();
+            String txtPassword = etPassword.getText().toString();
+            if (TextUtils.isEmpty(txtEmail) || TextUtils.isEmpty(txtPassword)) {
+                Toast.makeText(LoginActivity.this, "Faltan campos", Toast.LENGTH_SHORT).show();
+            } else {
+                mAuth.signInWithEmailAndPassword(txtEmail, txtPassword)
+                        .addOnCompleteListener(task -> {
+                            if (task.isSuccessful()) {
+                                // You can add Firestore specific logic here if needed
+                                Intent intent = new Intent(LoginActivity.this, MainActivity.class);
+                                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
+                                startActivity(intent);
+                                finish();
+                            } else {
+                                Toast.makeText(LoginActivity.this, "Error al autentificar", Toast.LENGTH_SHORT).show();
+                            }
+                        });
+            }
+        });
+
+
+
     }
     @Override
     public void onStart() {
@@ -99,6 +137,10 @@ public class LoginActivity extends AppCompatActivity {
     private void signIn() {
         Intent signInIntent = mGoogleSignInClient.getSignInIntent();
         startActivityForResult(signInIntent, RC_SIGN_IN);
+    }
+    public void onLoginClick(View view) {
+        startActivity(new Intent(this, RegisterActivity.class));
+        overridePendingTransition(R.anim.slide_in_right, android.R.anim.slide_out_right);
     }
 
     @Override

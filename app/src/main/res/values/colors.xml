@@ -5,5 +5,6 @@
     <color name="colorPrimary">#825EF6</color>
     <color name="colorPrimaryDark">#3C32A3</color>
     <color name="colorAccent">#42D3D8</color>
+    <color name="colorFontAccent">#FF8A00</color>
     <color name="colorFont">#1B1143</color>
 </resources>
