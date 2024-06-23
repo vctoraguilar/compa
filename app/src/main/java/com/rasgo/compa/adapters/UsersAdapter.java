@@ -1,10 +1,10 @@
 package com.rasgo.compa.adapters;
 
-import static androidx.core.content.ContentProviderCompat.requireContext;
+import static android.content.ContentValues.TAG;
 
 import android.content.Context;
 import android.content.Intent;
-import android.graphics.Typeface;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -13,7 +13,6 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
-import androidx.cardview.widget.CardView;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
@@ -24,7 +23,6 @@ import com.rasgo.compa.feature.profile.ProfileActivity;
 import com.rasgo.compa.model.user.user;
 
 import java.util.ArrayList;
-import java.util.List;
 
 public class UsersAdapter extends RecyclerView.Adapter<UsersAdapter.ViewHolder> {
 
@@ -53,6 +51,8 @@ public class UsersAdapter extends RecyclerView.Adapter<UsersAdapter.ViewHolder> 
         holder.userName.setText(user.getDisplayName());
         holder.businessName.setText(user.getBusinessName());
         Glide.with(context).load(user.getPhotoUrl()).into(holder.userImage);
+        Glide.with(context).load(user.getCoverUrl()).into(holder.coverImage);
+
 
         holder.itemView.setOnClickListener(View -> {
            if (firebaseUser != null) {
@@ -62,7 +62,10 @@ public class UsersAdapter extends RecyclerView.Adapter<UsersAdapter.ViewHolder> 
                intent.putExtra("businessName", user.getBusinessName());
                intent.putExtra("descripcion", user.getBusinessDescription());
                intent.putExtra("photoUrl", user.getPhotoUrl());
+               intent.putExtra("coverUrl",user.getCoverUrl());
                intent.putExtra("businessEmail", user.getBusinessEmail());
+               Log.d(TAG, "Cover URL: " + user.getCoverUrl());
+
                context.startActivity(intent);
            } else {
                Toast.makeText(context, "Error al mostrar usuarios", Toast.LENGTH_SHORT).show();
@@ -109,17 +112,21 @@ public class UsersAdapter extends RecyclerView.Adapter<UsersAdapter.ViewHolder> 
         public TextView userName;
         public TextView businessName;
         public ImageView userImage;
+        public ImageView coverImage;
 
         public ViewHolder(View itemView) {
             super(itemView);
             userName = itemView.findViewById(R.id.user_name);
             businessName=itemView.findViewById(R.id.business_name);
             userImage = itemView.findViewById(R.id.photo);
+            coverImage = itemView.findViewById(R.id.imageCover);
         }
 
         public void bind(user user) {
             userName.setText(user.getDisplayName());
             Glide.with(context).load(user.getPhotoUrl()).into(userImage);
+            Glide.with(context).load(user.getCoverUrl()).into(coverImage);
+
         }
     }
     public void onClick(View v) {

@@ -18,6 +18,7 @@ import android.view.View;
 import android.webkit.MimeTypeMap;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -69,7 +70,7 @@ public class ProfileActivity extends AppCompatActivity {
 
     private String uid="",profileUrl="", coverUrl="";
     private int current_state=0;
-    private Button btnLogout;
+    private ImageButton btnLogout;
     private static final int IMAGE_REQUEST=1;
 
     /*
@@ -94,6 +95,7 @@ public class ProfileActivity extends AppCompatActivity {
     public String idUsuario;
     public String nombreUsuario;
     public String urlImagen;
+    public String urlCoverAux;
     public int state=0;
 
     private DocumentReference reference;
@@ -103,6 +105,7 @@ public class ProfileActivity extends AppCompatActivity {
     private Uri coverImageUri;
     private StorageTask uploadTask;
     private String mUri;
+    private boolean profileOptionSelect=false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -111,15 +114,19 @@ public class ProfileActivity extends AppCompatActivity {
         setContentView(R.layout.activity_profile);
 
         idUsuario = getIntent().getStringExtra("idUsuario");
-        nombreUsuario = getIntent().getStringExtra("name");
         urlImagen = getIntent().getStringExtra("photoUrl");
+        urlCoverAux=getIntent().getStringExtra("coverUrl");
+        nombreUsuario = getIntent().getStringExtra("name");
         fuser = FirebaseAuth.getInstance().getCurrentUser();
         profileImage = findViewById(R.id.profile_image);
         coverImage = findViewById(R.id.profile_cover);
         coverImage.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                openCoverGallery();
+                if (profileOptionSelect==true){
+                    openCoverGallery();
+                }
+
             }
         });
 
@@ -129,7 +136,9 @@ public class ProfileActivity extends AppCompatActivity {
         profileImage.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                openGallery();
+                if (profileOptionSelect==true) {
+                    openGallery();
+                }
             }
         });
 
@@ -196,25 +205,36 @@ public class ProfileActivity extends AppCompatActivity {
         readProfile();
         loadBusinessInfo();
 
+
         //Botón Editar
         profileOptionButton = findViewById(R.id.profile_action_btn);
+        ImageView editProfile= findViewById(R.id.profile_imageEdit);
+        ImageView editCover= findViewById(R.id.profile_coverEdit);
+
         profileOptionButton.setOnClickListener(new View.OnClickListener() {
+
             @Override
             public void onClick(View v) {
                 if (profileOptionButton.getText().toString().equals("Editar Perfil")){
+                    profileOptionSelect=true;
                     adapter.setEditable(true);
                     profileOptionButton.setText("Guardar");
+                    editProfile.setVisibility(View.VISIBLE);
+                    editCover.setVisibility(View.VISIBLE);
+
                 }else{
                     adapter.setEditable(false);
                     profileOptionButton.setText("Editar Perfil");
                     saveBusinessInfo();
+                    editProfile.setVisibility(View.INVISIBLE);
+                    editCover.setVisibility(View.INVISIBLE);
                 }
 
             }
         });
 
         //Botón Cerrar Sesión
-        Button btnLogout = findViewById(R.id.btn_logout);
+        btnLogout = findViewById(R.id.btn_logout);
         btnLogout.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -262,6 +282,8 @@ public class ProfileActivity extends AppCompatActivity {
                 uploadCoverImage();
             }
         }
+
+
     }
 
     private void uploadCoverImage() {
@@ -409,20 +431,41 @@ public class ProfileActivity extends AppCompatActivity {
                                 DocumentSnapshot document = task.getResult();
                                 if (document.exists()) {
                                     user duser = document.toObject(user.class);
-                                    if (duser != null) {
-                                        Log.d(TAG, document.getId() + " => " + document.getData());
-                                        String ToolbarTitle = document.getString("displayName");
-                                        String ProfileImage = document.getString("photoUrl");
-                                        if (ToolbarTitle != null && !ToolbarTitle.isEmpty()) {
-                                            String firstName = ToolbarTitle.split(" ")[0];
-                                            // Aquí asumes que tienes una referencia a un CollapsingToolbarLayout
-                                            // collapsingToolbarLayout.setTitle(firstName);
+                                    if (currentUser != null && idUsuario.equals(currentUser.getUid())) {
+                                        if (duser != null) {
+                                            Log.d(TAG, document.getId() + " => " + document.getData());
+                                            String ToolbarTitle = document.getString("displayName");
+                                            String ProfileImage = document.getString("photoUrl");
+                                            String CoverImage = document.getString("coverUrl");
+                                            if (ToolbarTitle != null && !ToolbarTitle.isEmpty()) {
+                                                String firstName = ToolbarTitle.split(" ")[0];
+                                                collapsingToolbarLayout.setTitle(firstName);
+                                            }
+                                            if (ProfileImage != null) {
+                                                Glide.with(ProfileActivity.this)
+                                                        .load(ProfileImage)
+                                                        .into(profileImage);
+                                            }
+                                            if (CoverImage != null) {
+                                                Glide.with(ProfileActivity.this)
+                                                        .load(CoverImage)
+                                                        .into(coverImage);
+                                            }
                                         }
-                                        if (ProfileImage != null) {
-                                            Glide.with(ProfileActivity.this)
-                                                    .load(ProfileImage)
-                                                    .into(profileImage);
+                                    }
+                                    else {
+                                        String ToolbarTitle2=nombreUsuario;
+                                        String CoverImage = coverUrl;
+                                        if (ToolbarTitle2 != null && !ToolbarTitle2.isEmpty()) {
+                                            String firstName = ToolbarTitle2.split(" ")[0];
+                                            collapsingToolbarLayout.setTitle(firstName);
                                         }
+                                        Glide.with(ProfileActivity.this)
+                                                .load(urlImagen)
+                                                .into(profileImage);
+                                        Glide.with(ProfileActivity.this)
+                                                    .load(urlCoverAux)
+                                                    .into(coverImage);
                                     }
                                 } else {
                                     Toast.makeText(ProfileActivity.this, "No se encontró documento para el usuario actual", Toast.LENGTH_SHORT).show();

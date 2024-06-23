@@ -41,6 +41,17 @@
                     android:layout_height="370dp"
                     android:onClick="openImagePicker"
                     />
+                <ImageView
+                    android:id="@+id/profile_coverEdit"
+                    android:scaleType="center"
+                    android:paddingBottom="50dp"
+                    app:layout_collapseMode="parallax"
+                    android:adjustViewBounds="true"
+                    android:src="@drawable/edit_image_48px"
+                    android:background="@drawable/gradient_background"
+                    android:layout_width="match_parent"
+                    android:layout_height="370dp"
+                    android:visibility="invisible"/>
 
 
             <androidx.cardview.widget.CardView
@@ -48,21 +59,29 @@
                 app:cardCornerRadius="60dp"
                 android:layout_gravity="bottom|center"
                 android:layout_height="120dp">
+
                 <ImageView
                     android:id="@+id/profile_image"
                     android:scaleType="centerCrop"
                     android:src="@drawable/user"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
-                    android:onClick="openImagePicker"
-                     />
+                    android:onClick="openImagePicker"/>
+                <ImageView
+                    android:id="@+id/profile_imageEdit"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:scaleType="center"
+                    android:src="@drawable/pencil_24px"
+                    android:background="#99858585"
+                    android:visibility="invisible"/>
             </androidx.cardview.widget.CardView>
             
             <androidx.appcompat.widget.AppCompatButton
                 android:id="@+id/profile_action_btn"
                 android:layout_gravity="bottom|end"
                 android:text="Editar Perfil"
-                android:background="@android:color/transparent"
+                android:background="@color/white"
                 android:textAllCaps="false"
                 android:minWidth="0dp"
                 android:minHeight="0dp"
@@ -74,7 +93,8 @@
                 android:layout_marginStart="10dp"
                 android:padding="10dp"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"/>
+                android:layout_height="wrap_content"
+                android:onClick="editarClick"/>
             </FrameLayout>
             <androidx.appcompat.widget.Toolbar
                 android:id="@+id/toolbar_bar"
@@ -101,14 +121,16 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"/>
 
-
-
-    <Button
+    <ImageButton
         android:id="@+id/btn_logout"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Cerrar sesión"
-        android:layout_gravity="bottom|center_horizontal"
-        android:layout_marginBottom="50dp"/>
+        android:src="@drawable/logout_24px"
+        android:background="@color/white"
+        android:layout_gravity="top|end"
+        android:layout_marginTop="35dp"
+        android:layout_marginRight="15dp"/>
+
+
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

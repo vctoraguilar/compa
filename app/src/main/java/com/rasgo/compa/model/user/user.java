@@ -1,13 +1,11 @@
 package com.rasgo.compa.model.user;
 
-import java.util.Collection;
-
 public class user {
     private String userId;
     private String displayName;
     private String email;
     private String photoUrl;
-    private String photoCoverUrl;
+    private String coverUrl;
     private String businessName;
     private String businessEmail;
     private String businessDescription;
@@ -15,12 +13,12 @@ public class user {
     public user() {
     }
 
-    public user(String userId, String displayName, String email, String photoUrl, String photoCoverUrl, String businessName, String businessEmail, String businessDescription) {
+    public user(String userId, String displayName, String email, String photoUrl, String coverUrl, String businessName, String businessEmail, String businessDescription) {
         this.userId = userId;
         this.displayName = displayName;
         this.email = email;
         this.photoUrl = photoUrl;
-        this.photoCoverUrl = photoCoverUrl;
+        this.coverUrl = coverUrl;
         this.businessName = businessName;
         this.businessEmail = businessEmail;
         this.businessDescription = businessDescription;
@@ -58,12 +56,12 @@ public class user {
         this.photoUrl = photoUrl;
     }
 
-    public String getPhotoCoverUrl() {
-        return photoCoverUrl;
+    public String getCoverUrl() {
+        return coverUrl;
     }
 
-    public void setPhotoCoverUrl(String photoCoverUrl) {
-        this.photoCoverUrl = photoCoverUrl;
+    public void setCoverUrl(String coverUrl) {
+        this.coverUrl = coverUrl;
     }
 
     public String getBusinessName() {
@@ -89,6 +87,4 @@ public class user {
     public void setBusinessDescription(String businessDescription) {
         this.businessDescription = businessDescription;
     }
-
-
 }
