@@ -9,6 +9,7 @@ public class user {
     private String businessName;
     private String businessEmail;
     private String businessDescription;
+    private String fcmToken;
 
     public user() {
     }

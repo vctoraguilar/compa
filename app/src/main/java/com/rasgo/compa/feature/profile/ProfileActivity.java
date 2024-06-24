@@ -70,7 +70,6 @@ public class ProfileActivity extends AppCompatActivity {
 
     private String uid="",profileUrl="", coverUrl="";
     private int current_state=0;
-    private ImageButton btnLogout;
     private static final int IMAGE_REQUEST=1;
 
     /*
@@ -184,14 +183,7 @@ public class ProfileActivity extends AppCompatActivity {
         loadBusinessInfo();
 
 
-        //Botón Cerrar Sesión
-        btnLogout = findViewById(R.id.btn_logout);
-        btnLogout.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                logout();
-            }
-        });
+
     }
 
     private void switcherState() {
@@ -544,26 +536,7 @@ public class ProfileActivity extends AppCompatActivity {
         }
     }
 
-    private void logout() {
-        getSharedPreferences("user_preferences", MODE_PRIVATE).edit().clear().apply();
-        FirebaseAuth.getInstance().signOut();
-        GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-                .requestIdToken(getString(R.string.default_web_client_id))
-                .requestEmail()
-                .build();
-        GoogleSignInClient googleSignInClient = GoogleSignIn.getClient(this, gso);
-        // Desautenticar de Google y revocar acceso
-        googleSignInClient.signOut().addOnCompleteListener(this, task -> {
-            googleSignInClient.revokeAccess().addOnCompleteListener(this, revokeTask -> {
-                // Redirigir a la actividad de inicio de sesión
-                Intent intent = new Intent(ProfileActivity.this, LoginActivity.class);
-                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-                startActivity(intent);
-                finish();
-            });
-        });
 
-    }
 
 
     private void checkFriendRequests() {

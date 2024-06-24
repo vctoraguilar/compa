@@ -183,10 +183,6 @@ public class LoginActivity extends AppCompatActivity {
                                     GoogleSignInAccount account = GoogleSignIn.getLastSignedInAccount(getApplicationContext());
                                     Intent intent = new Intent(LoginActivity.this, MainActivity.class);
                                     startActivity(intent);
-//                                    if (account != null) {
-//                                        saveUserToFirestore(user);
-//                                    }
-
                                 }
                             }).addOnFailureListener(e -> {
                                 Log.e(TAG, "Failed to get FCM token", e);

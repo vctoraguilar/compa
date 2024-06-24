@@ -46,10 +46,7 @@ import java.util.ArrayList;
 public class FeedFragment extends Fragment {
 
     private FirebaseFirestore db;
-    private static final String ARG_PARAM1 = "param1";
-    private static final String ARG_PARAM2 = "param2";
     private UsersAdapter mUsersAdapter;
-    private Button btnLogout;
     private ArrayList<user> userList = new ArrayList<>();
 
     public FeedFragment() {

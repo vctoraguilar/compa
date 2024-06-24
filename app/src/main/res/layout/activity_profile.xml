@@ -121,16 +121,4 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"/>
 
-    <ImageButton
-        android:id="@+id/btn_logout"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:src="@drawable/logout_24px"
-        android:background="@color/white"
-        android:layout_gravity="top|end"
-        android:layout_marginTop="35dp"
-        android:layout_marginRight="15dp"/>
-
-
-
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

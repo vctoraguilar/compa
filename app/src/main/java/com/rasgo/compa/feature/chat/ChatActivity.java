@@ -14,12 +14,12 @@ import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.rasgo.compa.R;
+import com.rasgo.compa.model.user.user;
 
 public class ChatActivity extends AppCompatActivity {
 
-    //UserModel otherUser;
+    user otherUser;
     String chatRoomId;
-    //ChatRoomModel chatRoomModel;
     EditText messageInput;
     ImageButton sendMessageButton;
     ImageButton backBtn;

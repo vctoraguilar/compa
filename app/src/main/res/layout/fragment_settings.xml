@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".feature.homepage.settings.SettingsFragment"
-    android:padding="16dp">
-
+    android:padding="16dp"
+    android:orientation="vertical">
     <androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
         xmlns:app="http://schemas.android.com/apk/res-auto"
-        android:id="@+id/user_card"
+        android:id="@+id/notifications"
         android:layout_width="match_parent"
         android:layout_height="50dp"
         android:layout_margin="8dp"
@@ -16,25 +16,97 @@
         android:layout_column="0"
         app:cardElevation="8dp"
         app:cardCornerRadius="15dp"
-        android:background="@drawable/card_background">
+        android:background="@drawable/card_background"
+        android:layout_gravity="top"
+        android:layout_marginTop="20dp">
 
         <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:background="@color/white">
+            android:background="@color/white"
+            android:layout_gravity="center">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Activar Notificaciones"
+                android:textSize="16sp"
+                android:textColor="@color/colorFont"
+                android:fontFamily="@font/fredoka_medium"
+                android:layout_gravity="center"/>
+            <Switch
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="15dp"/>
+        </LinearLayout>
+    </androidx.cardview.widget.CardView>
+    <androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        android:id="@+id/dark_card"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:layout_margin="8dp"
+        android:layout_row="0"
+        android:layout_column="0"
+        app:cardElevation="8dp"
+        app:cardCornerRadius="15dp"
+        android:background="@drawable/card_background"
+        android:layout_gravity="top"
+        android:layout_marginTop="20dp">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:background="@color/white"
+            android:layout_gravity="center">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Modo Oscuro"
+                android:textSize="16sp"
+                android:textColor="@color/colorFont"
+                android:fontFamily="@font/fredoka_medium"/>
+            <Switch
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="15dp"/>
+        </LinearLayout>
+    </androidx.cardview.widget.CardView>
+
+    <androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        android:id="@+id/logout_card"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:layout_margin="8dp"
+        android:layout_row="0"
+        android:layout_column="0"
+        app:cardElevation="8dp"
+        app:cardCornerRadius="15dp"
+        android:background="@drawable/card_background"
+        android:layout_gravity="bottom">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:background="@color/white"
+            android:layout_gravity="center">
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Cerrar Sesión"
-                android:textSize="18sp"
-                android:fontFamily="@font/fredoka_medium"
-                android:layout_gravity="end|center_vertical"/>
-            <ImageView
+                android:textSize="16sp"
+                android:textColor="@color/colorFont"
+                android:fontFamily="@font/fredoka_medium"/>
+            <ImageButton
+                android:id="@+id/btn_logout"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:src="@drawable/logout_24px"
-                android:layout_marginLeft="15dp"/>
+                android:layout_marginLeft="15dp"
+                android:background="@android:color/transparent"/>
         </LinearLayout>
     </androidx.cardview.widget.CardView>
-</FrameLayout>
+</LinearLayout>
