@@ -1,17 +1,31 @@
 package com.rasgo.compa.feature.chat;
 
 import android.os.Bundle;
+import android.widget.EditText;
+import android.widget.ImageButton;
+import android.widget.ImageView;
+import android.widget.TextView;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.rasgo.compa.R;
 
 public class ChatActivity extends AppCompatActivity {
 
+    //UserModel otherUser;
+    String chatRoomId;
+    //ChatRoomModel chatRoomModel;
+    EditText messageInput;
+    ImageButton sendMessageButton;
+    ImageButton backBtn;
+    TextView otherUsername;
+    RecyclerView recyclerView;
+    ImageView imageView;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);

@@ -96,7 +96,11 @@ public class ProfileActivity extends AppCompatActivity {
     public String nombreUsuario;
     public String urlImagen;
     public String urlCoverAux;
-    public int state=0;
+    public int state;
+
+    public String businessName;
+    public String businessDescription;
+    public String currentUserId;
 
     private DocumentReference reference;
     private StorageReference storageReference;
@@ -106,6 +110,8 @@ public class ProfileActivity extends AppCompatActivity {
     private StorageTask uploadTask;
     private String mUri;
     private boolean profileOptionSelect=false;
+    private ImageView editProfile;
+    private ImageView editCover;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -120,6 +126,7 @@ public class ProfileActivity extends AppCompatActivity {
         fuser = FirebaseAuth.getInstance().getCurrentUser();
         profileImage = findViewById(R.id.profile_image);
         coverImage = findViewById(R.id.profile_cover);
+
         coverImage.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -161,16 +168,33 @@ public class ProfileActivity extends AppCompatActivity {
         getSupportActionBar().setDisplayHomeAsUpEnabled(true); // Show the back button
         toolbar.setNavigationOnClickListener(v -> getOnBackPressedDispatcher()); // Handle back button click
 
-        Intent intent = getIntent();
-        String userId = intent.getStringExtra("user");
-        state = intent.getIntExtra("state", -1);
-
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         adapter = new BusinessInfoAdapter(this, businessInfoList);
         recyclerView.setAdapter(adapter);
 
         //loadUserProfile(userId);
 
+       //Botón Editar
+        profileOptionButton = findViewById(R.id.profile_action_btn);
+        editProfile= findViewById(R.id.profile_imageEdit);
+        editCover= findViewById(R.id.profile_coverEdit);
+
+        setSupportActionBar(toolbar);
+        readProfile();
+        loadBusinessInfo();
+
+
+        //Botón Cerrar Sesión
+        btnLogout = findViewById(R.id.btn_logout);
+        btnLogout.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                logout();
+            }
+        });
+    }
+
+    private void switcherState() {
         switch (state) {
             case 0:
                 // Perfil cargando
@@ -188,59 +212,38 @@ public class ProfileActivity extends AppCompatActivity {
                 // Usuario que no es amigo
                 profileOptionButton.setText("Seamos Compas");
                 profileOptionButton.setOnClickListener(v ->{
-                    sendFriendRequest(userId);
+                    sendFriendRequest("");
                 });
                 break;
             case 5:
-                profileOptionButton.setText("Editar Perfil");
+                // Mi perfil
+                profileOptionButton.setOnClickListener(new View.OnClickListener() {
+
+                    @Override
+                    public void onClick(View v) {
+                        if (profileOptionButton.getText().toString().equals("Editar Perfil")){
+                            profileOptionSelect=true;
+                            adapter.setEditable(true);
+                            profileOptionButton.setText("Guardar");
+                            editProfile.setVisibility(View.VISIBLE);
+                            editCover.setVisibility(View.VISIBLE);
+
+                        }else{
+                            adapter.setEditable(false);
+                            profileOptionButton.setText("Editar Perfil");
+                            saveBusinessInfo();
+                            editProfile.setVisibility(View.INVISIBLE);
+                            editCover.setVisibility(View.INVISIBLE);
+                        }
+
+                    }
+                });
 
                 break;
             default:
                 // Estado desconocido
                 break;
         }
-
-
-        setSupportActionBar(toolbar);
-        readProfile();
-        loadBusinessInfo();
-
-
-        //Botón Editar
-        profileOptionButton = findViewById(R.id.profile_action_btn);
-        ImageView editProfile= findViewById(R.id.profile_imageEdit);
-        ImageView editCover= findViewById(R.id.profile_coverEdit);
-
-        profileOptionButton.setOnClickListener(new View.OnClickListener() {
-
-            @Override
-            public void onClick(View v) {
-                if (profileOptionButton.getText().toString().equals("Editar Perfil")){
-                    profileOptionSelect=true;
-                    adapter.setEditable(true);
-                    profileOptionButton.setText("Guardar");
-                    editProfile.setVisibility(View.VISIBLE);
-                    editCover.setVisibility(View.VISIBLE);
-
-                }else{
-                    adapter.setEditable(false);
-                    profileOptionButton.setText("Editar Perfil");
-                    saveBusinessInfo();
-                    editProfile.setVisibility(View.INVISIBLE);
-                    editCover.setVisibility(View.INVISIBLE);
-                }
-
-            }
-        });
-
-        //Botón Cerrar Sesión
-        btnLogout = findViewById(R.id.btn_logout);
-        btnLogout.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                logout();
-            }
-        });
     }
 
     private void openCoverGallery() {
@@ -337,8 +340,8 @@ public class ProfileActivity extends AppCompatActivity {
     }
 
     private void updateCoverImageUrl(String url) {
-        String userId = fuser.getUid();
-        db.collection("users").document(userId).update("coverUrl", url)
+        currentUserId = fuser.getUid();
+        db.collection("users").document(currentUserId).update("coverUrl", url)
                 .addOnCompleteListener(new OnCompleteListener<Void>() {
                     @Override
                     public void onComplete(@NonNull Task<Void> task) {
@@ -401,8 +404,8 @@ public class ProfileActivity extends AppCompatActivity {
 
 
     private void updateProfileImageUrl(String url) {
-        String userId = fuser.getUid();
-        db.collection("users").document(userId).update("photoUrl", url)
+        currentUserId = fuser.getUid();
+        db.collection("users").document(currentUserId).update("photoUrl", url)
                 .addOnCompleteListener(new OnCompleteListener<Void>() {
                     @Override
                     public void onComplete(@NonNull Task<Void> task) {
@@ -420,7 +423,7 @@ public class ProfileActivity extends AppCompatActivity {
     private void readProfile() {
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
         if (currentUser != null) {
-            String currentUserId = currentUser.getUid();
+            currentUserId = currentUser.getUid();
             db = FirebaseFirestore.getInstance();
             db.collection("users").document(currentUserId)
                     .get()
@@ -432,11 +435,14 @@ public class ProfileActivity extends AppCompatActivity {
                                 if (document.exists()) {
                                     user duser = document.toObject(user.class);
                                     if (currentUser != null && idUsuario.equals(currentUser.getUid())) {
+                                        state=5;
                                         if (duser != null) {
                                             Log.d(TAG, document.getId() + " => " + document.getData());
                                             String ToolbarTitle = document.getString("displayName");
                                             String ProfileImage = document.getString("photoUrl");
                                             String CoverImage = document.getString("coverUrl");
+                                            businessName = document.getString("businessName");
+                                            businessDescription = document.getString("businessDescription");
                                             if (ToolbarTitle != null && !ToolbarTitle.isEmpty()) {
                                                 String firstName = ToolbarTitle.split(" ")[0];
                                                 collapsingToolbarLayout.setTitle(firstName);
@@ -451,6 +457,7 @@ public class ProfileActivity extends AppCompatActivity {
                                                         .load(CoverImage)
                                                         .into(coverImage);
                                             }
+
                                         }
                                     }
                                     else {
@@ -466,7 +473,9 @@ public class ProfileActivity extends AppCompatActivity {
                                         Glide.with(ProfileActivity.this)
                                                     .load(urlCoverAux)
                                                     .into(coverImage);
+                                        state=4;
                                     }
+                                    switcherState();
                                 } else {
                                     Toast.makeText(ProfileActivity.this, "No se encontró documento para el usuario actual", Toast.LENGTH_SHORT).show();
                                 }
@@ -479,7 +488,6 @@ public class ProfileActivity extends AppCompatActivity {
             Toast.makeText(ProfileActivity.this, "No hay usuario autenticado", Toast.LENGTH_SHORT).show();
         }
     }
-
 
     private void sendFriendRequest(String userId) {
         Toast.makeText(this, "Solicitud de Compa enviada a " + userId, Toast.LENGTH_SHORT).show();
@@ -511,7 +519,7 @@ public class ProfileActivity extends AppCompatActivity {
     private void loadBusinessInfo() {
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
         if (currentUser != null) {
-            String currentUserId = currentUser.getUid();
+            currentUserId = currentUser.getUid();
             db.collection("users").document(currentUserId)
                     .get()
                     .addOnCompleteListener(task -> {
@@ -536,7 +544,6 @@ public class ProfileActivity extends AppCompatActivity {
         }
     }
 
-
     private void logout() {
         getSharedPreferences("user_preferences", MODE_PRIVATE).edit().clear().apply();
         FirebaseAuth.getInstance().signOut();
@@ -559,87 +566,65 @@ public class ProfileActivity extends AppCompatActivity {
     }
 
 
-//    private void checkFriendRequests() {
-//        db.collection("friendRequests").document(currentUser.getUid())
-//                .collection("sentRequests").document(userId)
-//                .get()
-//                .addOnCompleteListener(task -> {
-//                    if (task.isSuccessful()) {
-//                        DocumentSnapshot document = task.getResult();
-//                        if (document.exists()) {
-//                            // Hemos enviado una solicitud de amistad
-//                            setState(2);
-//                        } else {
-//                            // Verificar si hemos recibido una solicitud de amistad
-//                            db.collection("friendRequests").document(currentUser.getUid())
-//                                    .collection("receivedRequests").document(userId)
-//                                    .get()
-//                                    .addOnCompleteListener(task2 -> {
-//                                        if (task2.isSuccessful()) {
-//                                            DocumentSnapshot document2 = task2.getResult();
-//                                            if (document2.exists()) {
-//                                                // Hemos recibido una solicitud de amistad
-//                                                setState(3);
-//                                            } else {
-//                                                // Usuario que no es amigo
-//                                                setState(4);
-//                                            }
-//                                        } else {
-//                                            Log.d(TAG, "Error al verificar las solicitudes recibidas: ", task2.getException());
-//                                        }
-//                                    });
-//                        }
-//                    } else {
-//                        Log.d(TAG, "Error al verificar las solicitudes enviadas: ", task.getException());
-//                    }
-//                });
-//    }
+    private void checkFriendRequests() {
+        db.collection("friendRequests").document(fuser.getUid())
+                .collection("sentRequests").document(currentUserId)
+                .get()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        DocumentSnapshot document = task.getResult();
+                        if (document.exists()) {
+                            // Hemos enviado una solicitud de amistad
+                            setState(2);
+                        } else {
+                            // Verificar si hemos recibido una solicitud de amistad
+                            db.collection("friendRequests").document(fuser.getUid())
+                                    .collection("receivedRequests").document(currentUserId)
+                                    .get()
+                                    .addOnCompleteListener(task2 -> {
+                                        if (task2.isSuccessful()) {
+                                            DocumentSnapshot document2 = task2.getResult();
+                                            if (document2.exists()) {
+                                                // Hemos recibido una solicitud de amistad
+                                                setState(3);
+                                            } else {
+                                                // Usuario que no es amigo
+                                                setState(4);
+                                            }
+                                        } else {
+                                            Log.d(TAG, "Error al verificar las solicitudes recibidas: ", task2.getException());
+                                        }
+                                    });
+                        }
+                    } else {
+                        Log.d(TAG, "Error al verificar las solicitudes enviadas: ", task.getException());
+                    }
+                });
+    }
 
-//    private void setState(int state) {
-//        // Configurar el estado del perfil basado en el valor de state
-//        switch (state) {
-//            case 0:
-//                // Perfil cargando
-//                break;
-//            case 1:
-//                // Usuario agregado como amigo
-//                break;
-//            case 2:
-//                // Hemos enviado solicitud de amistad
-//                break;
-//            case 3:
-//                // Hemos recibido solicitud de amistad
-//                break;
-//            case 4:
-//                // Usuario que no es amigo
-//                break;
-//            case 5:
-//                // Nuestro perfil
-//                break;
-//        }
-//    }
+    private void setState(int state) {
+        // Configurar el estado del perfil basado en el valor de state
+        switch (state) {
+            case 0:
+                // Perfil cargando
+                break;
+            case 1:
+                // Usuario agregado como amigo
+                break;
+            case 2:
+                // Hemos enviado solicitud de amistad
+                break;
+            case 3:
+                // Hemos recibido solicitud de amistad
+                break;
+            case 4:
+                // Usuario que no es amigo
+                break;
+            case 5:
+                // Nuestro perfil
+                break;
+        }
+    }
 
-//    private void loadUserProfile(String userId) {
-//        db.collection("users").document(userId).get().addOnCompleteListener(task -> {
-//            if (task.isSuccessful()) {
-//                DocumentSnapshot document = task.getResult();
-//                if (document.exists()) {
-//                    user user = document.toObject(user.class);
-//                    if (user != null) {
-//
-////                       displayName.setText(user.getDisplayName());
-////                       businessName.setText(user.getBusinessName());
-////                        businessInfoList.clear();
-////                        businessInfoList.addAll(user.getBusinessInfo()); // Suponiendo que user tiene un método getBusinessInfo()
-////                        adapter.notifyDataSetChanged();
-//                        Glide.with(this).load(user.getPhotoUrl()).into(profileImage);
-//                    }
-//                } else {
-//                    Toast.makeText(this, "El usuario no existe", Toast.LENGTH_SHORT).show();
-//                }
-//            } else {
-//                Toast.makeText(this, "Error al cargar el perfil", Toast.LENGTH_SHORT).show();
-//            }
-//        });
-//    }
+
 }

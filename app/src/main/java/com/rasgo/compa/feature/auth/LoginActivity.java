@@ -123,9 +123,6 @@ public class LoginActivity extends AppCompatActivity {
                         });
             }
         });
-
-
-
     }
     @Override
     public void onStart() {
@@ -184,9 +181,11 @@ public class LoginActivity extends AppCompatActivity {
                                 FirebaseUser user = mAuth.getCurrentUser();
                                 if (user != null) {
                                     GoogleSignInAccount account = GoogleSignIn.getLastSignedInAccount(getApplicationContext());
-                                    if (account != null) {
-                                        saveUserToFirestore(user);
-                                    }
+                                    Intent intent = new Intent(LoginActivity.this, MainActivity.class);
+                                    startActivity(intent);
+//                                    if (account != null) {
+//                                        saveUserToFirestore(user);
+//                                    }
 
                                 }
                             }).addOnFailureListener(e -> {
@@ -205,60 +204,12 @@ public class LoginActivity extends AppCompatActivity {
                     }
                 });
     }
-
-    private void saveUserToFirestore(FirebaseUser user) {
-        String userId = user.getUid();
-        String displayName = user.getDisplayName();
-
-        String email = user.getEmail();
-        String photoUrl = user.getPhotoUrl() != null ? user.getPhotoUrl().toString() : null;
-
-        Map<String, Object> userMap = new HashMap<>();
-        userMap.put("userId", userId);
-        userMap.put("displayName", displayName);
-        userMap.put("email", email);
-        userMap.put("photoUrl", photoUrl);
-
-        db.collection("users").document(userId)
-                .set(userMap)
-                .addOnSuccessListener(aVoid -> {
-                    Log.d(TAG, "Datos de usuario guardados");
-                    Intent intent = new Intent(LoginActivity.this, MainActivity.class);
-                    startActivity(intent);
-                    finish();
-                })
-                .addOnFailureListener(e -> Log.w(TAG, "Error guardando datos de usuario", e));
-    }
-
-    private Intent createMainActivityIntent(String userId, String givenName, String familyName, String userName, String userEmail, String userPhotoUrl) {
-        Intent intent = new Intent(LoginActivity.this, MainActivity.class);
-        intent.putExtra("USER_ID", userId);
-        intent.putExtra("GIVEN_NAME", givenName);
-        intent.putExtra("FAMILY_NAME", familyName);
-        intent.putExtra("USER_NAME", userName);
-        intent.putExtra("USER_EMAIL", userEmail);
-        intent.putExtra("USER_PHOTO_URL", userPhotoUrl);
-        return intent;
-    }
     private void updateUI(FirebaseUser currentUser) {
         if (currentUser != null) {
             startActivity(new Intent(LoginActivity.this, MainActivity.class));
             finish();
         } else {
             signInButton.setVisibility(View.VISIBLE);
-        }
-    }
-
-    public static class UserInfo {
-        String uid, name, email, profileUrl, coverUrl, userToken;
-
-        public UserInfo(String uid, String name, String email, String profileUrl, String coverUrl, String userToken) {
-            this.uid = uid;
-            this.name = name;
-            this.email = email;
-            this.profileUrl = profileUrl;
-            this.coverUrl = coverUrl;
-            this.userToken = userToken;
         }
     }
 }
