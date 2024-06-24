@@ -5,37 +5,45 @@
     android:layout_height="match_parent"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     tools:context=".feature.homepage.feed.FeedFragment">
-
-    <LinearLayout
-        android:id="@+id/searchBar"
+    <androidx.cardview.widget.CardView
+        android:id="@+id/card_searh"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:padding="6dp">
-
-        <EditText
-            android:id="@+id/searchEditText"
-            android:layout_width="0dp"
+        android:layout_margin="6dp"
+        app:cardElevation="8dp"
+        app:cardCornerRadius="15dp"
+        android:background="@drawable/card_background">
+        <LinearLayout
+            android:id="@+id/searchBar"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:padding="8dp"
-            android:background="@null" />
-        <ImageView
-            android:layout_width="wrap_content"
-            android:layout_height="match_parent"
-            android:src="@drawable/ic_search"
-            android:layout_gravity="center_vertical" />
+            android:orientation="horizontal"
+            android:padding="6dp">
 
-    </LinearLayout>
+            <EditText
+                android:id="@+id/searchEditText"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:padding="8dp"
+                android:shadowColor="@color/black"
+                android:background="@color/white" />
+            <ImageView
+                android:layout_width="30dp"
+                android:layout_height="30dp"
+                android:src="@drawable/ic_search"
+                android:layout_gravity="center_vertical" />
 
+        </LinearLayout>
+    </androidx.cardview.widget.CardView>
     <!-- Section titles -->
     <LinearLayout
         android:id="@+id/sectionTitles"
-        android:layout_below="@id/searchBar"
+        android:layout_below="@id/card_searh"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:layout_marginTop="16dp">
+        android:layout_marginTop="10dp">
 
         <TextView
             android:id="@+id/encuentraCompas"
@@ -43,10 +51,10 @@
             android:layout_height="wrap_content"
             android:padding="8dp"
             android:textAlignment="center"
-            android:text="Encuentra compas"
+            android:text="Encuentra Compas"
+            android:fontFamily="@font/fredoka_bold"
             android:textSize="18sp"
-            android:background="@color/colorPrimaryDark"
-            android:textColor="@android:color/white"
+            android:textColor="@color/colorPrimary"
             android:layout_gravity="center_vertical"
             android:layout_marginLeft="16dp"
             android:layout_marginRight="16dp"

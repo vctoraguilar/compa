@@ -5,6 +5,7 @@ import static android.content.Context.MODE_PRIVATE;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 
 import androidx.annotation.NonNull;
@@ -29,6 +30,7 @@ import com.rasgo.compa.feature.profile.ProfileActivity;
 public class SettingsFragment extends Fragment {
 
     private ImageButton btnLogout;
+    private ImageButton btnTerms;
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -44,14 +46,23 @@ public class SettingsFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        // Find the button
         btnLogout = view.findViewById(R.id.btn_logout);
 
-        // Set an OnClickListener
         btnLogout.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 showLogoutConfirmationDialog();
+            }
+        });
+
+        btnTerms = view.findViewById(R.id.btn_terms);
+        btnTerms.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                String url = "https://www.compa.pe/terminos";
+                Intent intent = new Intent(Intent.ACTION_VIEW);
+                intent.setData(Uri.parse(url));
+                startActivity(intent);
             }
         });
     }

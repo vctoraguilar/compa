@@ -73,6 +73,13 @@ public class MainActivity extends AppCompatActivity {
 
         bottomNavigationView = findViewById(R.id.navigation);
 
+        bottomNavigationView = findViewById(R.id.navigation);
+        ViewCompat.setOnApplyWindowInsetsListener(bottomNavigationView, (v, insets) -> {
+            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+            v.setPadding(v.getPaddingLeft(), v.getPaddingTop(), v.getPaddingRight(), systemBars.bottom);
+            return insets;
+        });
+        
         setBottomNavigationView(new BottomNavigationView.OnItemSelectedListener() {
             @Override
             public boolean onNavigationItemSelected(@NonNull MenuItem item) {

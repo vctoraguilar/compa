@@ -73,7 +73,41 @@
                 android:layout_marginLeft="15dp"/>
         </LinearLayout>
     </androidx.cardview.widget.CardView>
+    <androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        android:id="@+id/termsOfService"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:layout_margin="8dp"
+        android:layout_row="0"
+        android:layout_column="0"
+        app:cardElevation="8dp"
+        app:cardCornerRadius="15dp"
+        android:background="@drawable/card_background"
+        android:layout_gravity="bottom">
 
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:background="@color/white"
+            android:layout_gravity="center">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Términos y Condiciones"
+                android:textSize="16sp"
+                android:textColor="@color/colorFont"
+                android:fontFamily="@font/fredoka_medium"/>
+            <ImageButton
+                android:id="@+id/btn_terms"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@drawable/terms_and_conditions_24px"
+                android:layout_marginLeft="15dp"
+                android:background="@android:color/transparent"/>
+        </LinearLayout>
+    </androidx.cardview.widget.CardView>
     <androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
         xmlns:app="http://schemas.android.com/apk/res-auto"
         android:id="@+id/logout_card"
