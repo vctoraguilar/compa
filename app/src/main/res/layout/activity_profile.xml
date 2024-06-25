@@ -39,8 +39,7 @@
                     android:src="@color/white"
                     android:layout_width="match_parent"
                     android:layout_height="370dp"
-                    android:onClick="openImagePicker"
-                    />
+                    android:onClick="openImagePicker" />
                 <ImageView
                     android:id="@+id/profile_coverEdit"
                     android:scaleType="center"
@@ -51,50 +50,49 @@
                     android:background="@drawable/gradient_background"
                     android:layout_width="match_parent"
                     android:layout_height="370dp"
-                    android:visibility="invisible"/>
+                    android:visibility="invisible" />
 
+                <androidx.cardview.widget.CardView
+                    android:layout_width="120dp"
+                    app:cardCornerRadius="60dp"
+                    android:layout_gravity="bottom|center"
+                    android:layout_height="120dp">
 
-            <androidx.cardview.widget.CardView
-                android:layout_width="120dp"
-                app:cardCornerRadius="60dp"
-                android:layout_gravity="bottom|center"
-                android:layout_height="120dp">
+                    <ImageView
+                        android:id="@+id/profile_image"
+                        android:scaleType="centerCrop"
+                        android:src="@drawable/user"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:onClick="openImagePicker" />
+                    <ImageView
+                        android:id="@+id/profile_imageEdit"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:scaleType="center"
+                        android:src="@drawable/pencil_24px"
+                        android:background="#99858585"
+                        android:visibility="invisible" />
+                </androidx.cardview.widget.CardView>
 
-                <ImageView
-                    android:id="@+id/profile_image"
-                    android:scaleType="centerCrop"
-                    android:src="@drawable/user"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:onClick="openImagePicker"/>
-                <ImageView
-                    android:id="@+id/profile_imageEdit"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:scaleType="center"
-                    android:src="@drawable/pencil_24px"
-                    android:background="#99858585"
-                    android:visibility="invisible"/>
-            </androidx.cardview.widget.CardView>
-            
-            <androidx.appcompat.widget.AppCompatButton
-                android:id="@+id/profile_action_btn"
-                android:layout_gravity="bottom|end"
-                android:text="Editar Perfil"
-                android:background="@color/white"
-                android:textAllCaps="false"
-                android:minWidth="0dp"
-                android:minHeight="0dp"
-                app:layout_collapseMode="parallax"
-                android:textSize="12sp"
-                android:textColor="@color/colorPrimary"
-                android:layout_marginBottom="30dp"
-                android:layout_marginEnd="20dp"
-                android:layout_marginStart="10dp"
-                android:padding="10dp"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:onClick="editarClick"/>
+                <androidx.appcompat.widget.AppCompatButton
+                    android:id="@+id/profile_action_btn"
+                    android:layout_gravity="bottom|end"
+                    android:text="Editar Perfil"
+                    android:background="@color/white"
+                    android:textAllCaps="false"
+                    android:minWidth="0dp"
+                    android:minHeight="0dp"
+                    app:layout_collapseMode="parallax"
+                    android:textSize="12sp"
+                    android:textColor="@color/colorPrimary"
+                    android:layout_marginBottom="30dp"
+                    android:layout_marginEnd="20dp"
+                    android:layout_marginStart="10dp"
+                    android:padding="10dp"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:onClick="editarClick" />
             </FrameLayout>
             <androidx.appcompat.widget.Toolbar
                 android:id="@+id/toolbar_bar"
@@ -103,22 +101,73 @@
                 app:layout_collapseMode="pin"
                 app:titleMarginStart="0dp"
                 style="@style/ThemeOverlay.AppCompat.Dark.ActionBar"
-                android:layout_height="?android:attr/actionBarSize"/>
+                android:layout_height="?android:attr/actionBarSize" />
         </com.google.android.material.appbar.CollapsingToolbarLayout>
     </com.google.android.material.appbar.AppBarLayout>
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/recyv_profile"
-        android:layout_marginBottom="8dp"
-        app:layout_behavior="@string/appbar_scrolling_view_behavior"
+    <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
-        android:layout_height="match_parent"/>
+        android:layout_height="match_parent"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <LinearLayout
+                android:id="@+id/your_linear_layout"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <EditText
+                    android:id="@+id/et_business_name"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="Ingresa el nombre de tu negocio"
+                    android:fontFamily="@font/fredoka_regular"
+                    android:textColor="@color/colorFont"
+                    android:textSize="14sp"
+                    android:enabled="false"/>
+                <EditText
+                    android:id="@+id/et_business_email"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="Correo electrónico de tu negocio"
+                    android:fontFamily="@font/fredoka_regular"
+                    android:textColor="@color/colorFont"
+                    android:textSize="12sp"
+                    android:enabled="false"
+                    android:background="?android:attr/editTextBackground"/>
+                <EditText
+                    android:id="@+id/et_business_description"
+                    android:lines="8"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="Descripción del negocio"
+                    android:inputType="textMultiLine"
+                    android:minLines="1"
+                    android:fontFamily="@font/fredoka_regular"
+                    android:textColor="@color/colorFont"
+                    android:textSize="12sp"
+                    android:enabled="false"/>
+            </LinearLayout>
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recyv_profile"
+                android:layout_marginBottom="8dp"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+
     <ProgressBar
         android:id="@+id/progressbar"
         android:layout_gravity="bottom|center"
         android:layout_marginBottom="8dp"
         android:visibility="gone"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"/>
+        android:layout_height="wrap_content" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

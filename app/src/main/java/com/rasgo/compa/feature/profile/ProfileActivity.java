@@ -12,6 +12,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -29,6 +30,7 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.app.ActivityCompat;
+import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -50,6 +52,7 @@ import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.StorageTask;
 import com.google.firebase.storage.UploadTask;
 import com.rasgo.compa.R;
+import com.rasgo.compa.adapters.PhotoAdapter;
 import com.rasgo.compa.feature.auth.LoginActivity;
 import com.rasgo.compa.adapters.BusinessInfoAdapter;
 
@@ -87,7 +90,6 @@ public class ProfileActivity extends AppCompatActivity {
     private RecyclerView recyclerView;
     private ProgressBar progressBar;
     private FirebaseFirestore db;
-    private BusinessInfoAdapter adapter;
 
     private List<String> businessInfoList = new ArrayList<>();
 
@@ -111,7 +113,11 @@ public class ProfileActivity extends AppCompatActivity {
     private boolean profileOptionSelect=false;
     private ImageView editProfile;
     private ImageView editCover;
-
+    public EditText et_businessName;
+    public EditText et_businessDescription;
+    public EditText et_businessEmail;
+    private PhotoAdapter photoAdapter;
+    private List<Uri> photoUris;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -125,6 +131,10 @@ public class ProfileActivity extends AppCompatActivity {
         fuser = FirebaseAuth.getInstance().getCurrentUser();
         profileImage = findViewById(R.id.profile_image);
         coverImage = findViewById(R.id.profile_cover);
+
+        et_businessName=findViewById(R.id.et_business_name);
+        et_businessEmail=findViewById(R.id.et_business_email);
+        et_businessDescription=findViewById(R.id.et_business_description);
 
         coverImage.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -154,24 +164,16 @@ public class ProfileActivity extends AppCompatActivity {
         collapsingToolbarLayout = findViewById(R.id.collapsing_toolbar);
 
         recyclerView = findViewById(R.id.recyv_profile);
-        recyclerView.setLayoutManager(new LinearLayoutManager(this));
+        recyclerView.setLayoutManager(new GridLayoutManager(this, 3));
 
-        String businessName = "Nombre del Negocio";
-        String businessDescription = "Descripción del negocio";
-
-        adapter = new BusinessInfoAdapter(businessName, businessDescription);
-        recyclerView.setAdapter(adapter);
+        photoUris = new ArrayList<>();
+        photoAdapter = new PhotoAdapter(this, photoUris);
+        recyclerView.setAdapter(photoAdapter);
 
         //Retroceder
         setSupportActionBar(toolbar);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true); // Show the back button
         toolbar.setNavigationOnClickListener(v -> getOnBackPressedDispatcher()); // Handle back button click
-
-        recyclerView.setLayoutManager(new LinearLayoutManager(this));
-        adapter = new BusinessInfoAdapter(this, businessInfoList);
-        recyclerView.setAdapter(adapter);
-
-        //loadUserProfile(userId);
 
        //Botón Editar
         profileOptionButton = findViewById(R.id.profile_action_btn);
@@ -181,11 +183,26 @@ public class ProfileActivity extends AppCompatActivity {
         setSupportActionBar(toolbar);
         readProfile();
         loadBusinessInfo();
-
-
-
     }
+    private void setEditTextEnabled(EditText editText, boolean enabled) {
+        editText.setEnabled(enabled);
 
+        if (enabled) {
+            // Restaurar el fondo por defecto cuando está habilitado
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                editText.setBackground(getDrawable(android.R.drawable.edit_text));
+            } else {
+                editText.setBackground(getResources().getDrawable(android.R.drawable.edit_text));
+            }
+        } else {
+            // Usar un fondo transparente cuando está deshabilitado
+            editText.setBackgroundColor(getResources().getColor(android.R.color.transparent));
+        }
+    }
+    private void addImage(Uri uri) {
+        photoUris.add(uri);
+        photoAdapter.notifyItemInserted(photoUris.size() - 1);
+    }
     private void switcherState() {
         switch (state) {
             case 0:
@@ -215,22 +232,24 @@ public class ProfileActivity extends AppCompatActivity {
                     public void onClick(View v) {
                         if (profileOptionButton.getText().toString().equals("Editar Perfil")){
                             profileOptionSelect=true;
-                            adapter.setEditable(true);
                             profileOptionButton.setText("Guardar");
                             editProfile.setVisibility(View.VISIBLE);
                             editCover.setVisibility(View.VISIBLE);
+                            setEditTextEnabled(et_businessName, true);
+                            setEditTextEnabled(et_businessEmail, true);
+                            setEditTextEnabled(et_businessDescription, true);
 
                         }else{
-                            adapter.setEditable(false);
                             profileOptionButton.setText("Editar Perfil");
                             saveBusinessInfo();
                             editProfile.setVisibility(View.INVISIBLE);
                             editCover.setVisibility(View.INVISIBLE);
+                            setEditTextEnabled(et_businessName, false);
+                            setEditTextEnabled(et_businessEmail, false);
+                            setEditTextEnabled(et_businessDescription, false);
                         }
-
                     }
                 });
-
                 break;
             default:
                 // Estado desconocido
@@ -449,12 +468,10 @@ public class ProfileActivity extends AppCompatActivity {
                                                         .load(CoverImage)
                                                         .into(coverImage);
                                             }
-
                                         }
                                     }
                                     else {
                                         String ToolbarTitle2=nombreUsuario;
-                                        String CoverImage = coverUrl;
                                         if (ToolbarTitle2 != null && !ToolbarTitle2.isEmpty()) {
                                             String firstName = ToolbarTitle2.split(" ")[0];
                                             collapsingToolbarLayout.setTitle(firstName);
@@ -482,23 +499,27 @@ public class ProfileActivity extends AppCompatActivity {
     }
 
     private void sendFriendRequest(String userId) {
+
         Toast.makeText(this, "Solicitud de Compa enviada a " + userId, Toast.LENGTH_SHORT).show();
 
     }
 
     private void saveBusinessInfo() {
-        EditText etBusinessName = recyclerView.findViewById(R.id.et_business_name);
-        EditText etBusinessDescription = recyclerView.findViewById(R.id.et_business_description);
+        EditText etBusinessName = findViewById(R.id.et_business_name);
+        EditText etBusinessDescription = findViewById(R.id.et_business_description);
+        EditText etBusinessEmail = findViewById(R.id.et_business_email);
 
         String updatedBusinessName = etBusinessName.getText().toString();
         String updatedBusinessDescription = etBusinessDescription.getText().toString();
+        String updatedBusinessEmail = etBusinessEmail.getText().toString();
 
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
         if (currentUser != null) {
             String currentUserId = currentUser.getUid();
             db.collection("users").document(currentUserId)
                     .update("businessName", updatedBusinessName,
-                            "businessDescription", updatedBusinessDescription)
+                            "businessDescription", updatedBusinessDescription,
+                            "businessEmail", updatedBusinessEmail)
                     .addOnSuccessListener(aVoid -> {
                         Toast.makeText(ProfileActivity.this, "Datos guardados correctamente", Toast.LENGTH_SHORT).show();
                     })
@@ -511,7 +532,7 @@ public class ProfileActivity extends AppCompatActivity {
     private void loadBusinessInfo() {
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
         if (currentUser != null) {
-            currentUserId = currentUser.getUid();
+            String currentUserId = currentUser.getUid();
             db.collection("users").document(currentUserId)
                     .get()
                     .addOnCompleteListener(task -> {
@@ -520,9 +541,12 @@ public class ProfileActivity extends AppCompatActivity {
                             if (document.exists()) {
                                 String businessName = document.getString("businessName");
                                 String businessDescription = document.getString("businessDescription");
+                                String businessEmail = document.getString("businessEmail");
 
-                                if (businessName != null && businessDescription != null) {
-                                    adapter.setBusinessInfo(businessName, businessDescription);
+                                if (businessName != null && businessDescription != null && businessEmail != null) {
+                                    et_businessName.setText(businessName);
+                                    et_businessDescription.setText(businessDescription);
+                                    et_businessEmail.setText(businessEmail);
                                 }
                             } else {
                                 Log.d(TAG, "No se encontró documento para el usuario actual");
@@ -535,9 +559,6 @@ public class ProfileActivity extends AppCompatActivity {
             Log.d(TAG, "No hay usuario autenticado");
         }
     }
-
-
-
 
     private void checkFriendRequests() {
         db.collection("friendRequests").document(fuser.getUid())

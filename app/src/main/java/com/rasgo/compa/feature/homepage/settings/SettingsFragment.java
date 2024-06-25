@@ -79,6 +79,8 @@ public class SettingsFragment extends Fragment {
     private void logout() {
         // Obtener SharedPreferences desde el contexto de la actividad
         if (getActivity() != null) {
+
+
             getActivity().getSharedPreferences("user_preferences", Context.MODE_PRIVATE).edit().clear().apply();
             FirebaseAuth.getInstance().signOut();
 

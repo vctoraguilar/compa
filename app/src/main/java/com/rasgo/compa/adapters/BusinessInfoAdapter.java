@@ -55,8 +55,7 @@ public class BusinessInfoAdapter extends RecyclerView.Adapter<BusinessInfoAdapte
 
     @Override
     public int getItemCount() {
-        return 1; // Solo tenemos un elemento en este ejemplo
-    }
+        return 1; }
 
     public void setEditable(boolean editable) {
         isEditable = editable;
