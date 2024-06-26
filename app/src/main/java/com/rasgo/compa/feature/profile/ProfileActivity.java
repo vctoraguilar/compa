@@ -63,7 +63,9 @@ import com.rasgo.compa.model.user.user;
 import java.text.BreakIterator;
 import java.text.StringCharacterIterator;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import androidx.core.content.ContextCompat;
@@ -206,6 +208,9 @@ public class ProfileActivity extends AppCompatActivity {
         setSupportActionBar(toolbar);
         readProfile();
         loadBusinessInfo();
+
+
+
     }
 
     private void openImageSelector() {
@@ -241,18 +246,28 @@ public class ProfileActivity extends AppCompatActivity {
                 break;
             case 1:
                 // Usuario agregado como amigo
+                profileOptionButton.setText("Amigos");
+                profileOptionButton.setEnabled(false);
                 break;
             case 2:
                 // Hemos enviado solicitud de amistad
+                profileOptionButton.setText("Solicitud Enviada");
+                profileOptionButton.setEnabled(false);
                 break;
             case 3:
                 // Hemos recibido solicitud de amistad
+                profileOptionButton.setText("Aceptar Solicitud");
+                profileOptionButton.setOnClickListener(v -> {
+                    checkFriendRequests();
+                    acceptFriendRequest();
+                });
                 break;
             case 4:
                 // Usuario que no es amigo
                 profileOptionButton.setText("Seamos Compas");
-                profileOptionButton.setOnClickListener(v ->{
-                    sendFriendRequest("");
+                profileOptionButton.setOnClickListener(v -> {
+                    checkFriendRequests();
+                    sendFriendRequest(idUsuario);
                 });
                 break;
             case 5:
@@ -511,7 +526,7 @@ public class ProfileActivity extends AppCompatActivity {
         if (currentUser != null) {
             currentUserId = currentUser.getUid();
             db = FirebaseFirestore.getInstance();
-            db.collection("users").document(currentUserId)
+            db.collection("users").document(idUsuario != null ? idUsuario : currentUserId)
                     .get()
                     .addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
                         @Override
@@ -520,77 +535,22 @@ public class ProfileActivity extends AppCompatActivity {
                                 DocumentSnapshot document = task.getResult();
                                 if (document.exists()) {
                                     user duser = document.toObject(user.class);
-                                    if (currentUser != null && idUsuario.equals(currentUser.getUid())) { //Nosotros mismos
+                                    if (idUsuario == null || currentUserId.equals(idUsuario)) {
+                                        // Código para el usuario actual (igual que antes)
                                         state=5;
-                                        if (duser != null) {
-                                            Log.d(TAG, document.getId() + " => " + document.getData());
-                                            String ToolbarTitle = document.getString("displayName");
-                                            String ProfileImage = document.getString("photoUrl");
-                                            String CoverImage = document.getString("coverUrl");
-                                            businessName = document.getString("businessName");
-                                            businessDescription = document.getString("businessDescription");
-                                            businessEmail=document.getString("businessEmail");
-                                            if (ToolbarTitle != null && !ToolbarTitle.isEmpty()) {
-                                                String firstName = ToolbarTitle.split(" ")[0];
-                                                collapsingToolbarLayout.setTitle(firstName);
-                                            }
-                                            if (ProfileImage != null) {
-                                                Glide.with(ProfileActivity.this)
-                                                        .load(ProfileImage)
-                                                        .into(profileImage);
-                                            }
-                                            if (CoverImage != null) {
-                                                Glide.with(ProfileActivity.this)
-                                                        .load(CoverImage)
-                                                        .into(coverImage);
-                                            }
-                                            et_businessName.setText(businessName);
-                                            et_businessDescription.setText(businessDescription);
-                                            et_businessEmail.setText(businessEmail);
-
-                                            List<String> photoUrlsFromDb = (List<String>) document.get("imageUris");
-                                            if (photoUrlsFromDb != null) {
-                                                photoUris.clear();
-                                                for (String url : photoUrlsFromDb) {
-                                                    photoUris.add(Uri.parse(url));
-                                                }
-                                                photoAdapter.notifyDataSetChanged();
-                                            }
-                                        }
-                                    }
-                                    else {   //Otro usuario
-
-                                        String ToolbarTitle2=nombreUsuario;
-                                        if (ToolbarTitle2 != null && !ToolbarTitle2.isEmpty()) {
-                                            String firstName = ToolbarTitle2.split(" ")[0];
-                                            collapsingToolbarLayout.setTitle(firstName);
-                                        }
-                                        Glide.with(ProfileActivity.this)
-                                                .load(urlImagen)
-                                                .into(profileImage);
-                                        Glide.with(ProfileActivity.this)
-                                                    .load(urlCoverAux)
-                                                    .into(coverImage);
-                                        et_businessName.setText(businessName);
-                                        et_businessDescription.setText(businessDescription);
-                                        et_businessEmail.setText(businessEmail);
-
-
-                                        List<String> photoUrlsFromDb = (List<String>) document.get("imageUris");
-                                        if (photoUrlsFromDb != null) {
-                                            photoUris.clear();
-                                            for (String url : photoUrlsFromDb) {
-                                                photoUris.add(Uri.parse(url));
-                                            }
-                                            photoAdapter.notifyDataSetChanged();
-                                        }
+                                        handleUserProfile(document);
+                                    } else {
+                                        // Código para el usuario seleccionado
 
                                         state=4;
+                                        handleSelectedUserProfile(document);
+
                                     }
                                     switcherState();
                                 } else {
                                     Toast.makeText(ProfileActivity.this, "No se encontró documento para el usuario actual", Toast.LENGTH_SHORT).show();
                                 }
+
                             } else {
                                 Toast.makeText(ProfileActivity.this, "Error obteniendo documento", Toast.LENGTH_SHORT).show();
                             }
@@ -601,11 +561,84 @@ public class ProfileActivity extends AppCompatActivity {
         }
     }
 
-    private void sendFriendRequest(String userId) {
+    private void handleUserProfile(DocumentSnapshot document) {
+        user duser = document.toObject(user.class);
+        if (duser != null) {
+            String ToolbarTitle = document.getString("displayName");
+            String ProfileImage = document.getString("photoUrl");
+            String CoverImage = document.getString("coverUrl");
+            businessName = document.getString("businessName");
+            businessDescription = document.getString("businessDescription");
+            businessEmail = document.getString("businessEmail");
 
-        Toast.makeText(this, "Solicitud de Compa enviada a " + userId, Toast.LENGTH_SHORT).show();
+            if (ToolbarTitle != null && !ToolbarTitle.isEmpty()) {
+                String firstName = ToolbarTitle.split(" ")[0];
+                collapsingToolbarLayout.setTitle(firstName);
+            }
+            if (ProfileImage != null) {
+                Glide.with(ProfileActivity.this)
+                        .load(ProfileImage)
+                        .into(profileImage);
+            }
+            if (CoverImage != null) {
+                Glide.with(ProfileActivity.this)
+                        .load(CoverImage)
+                        .into(coverImage);
+            }
+            et_businessName.setText(businessName);
+            et_businessDescription.setText(businessDescription);
+            et_businessEmail.setText(businessEmail);
 
+            List<String> photoUrlsFromDb = (List<String>) document.get("imageUris");
+            if (photoUrlsFromDb != null) {
+                photoUris.clear();
+                for (String url : photoUrlsFromDb) {
+                    photoUris.add(Uri.parse(url));
+                }
+                photoAdapter.notifyDataSetChanged();
+            }
+        }
     }
+
+    private void handleSelectedUserProfile(DocumentSnapshot document) {
+        user duser = document.toObject(user.class);
+        if (duser != null) {
+            String ToolbarTitle = document.getString("displayName");
+            String ProfileImage = document.getString("photoUrl");
+            String CoverImage = document.getString("coverUrl");
+            businessName = document.getString("businessName");
+            businessDescription = document.getString("businessDescription");
+            businessEmail = document.getString("businessEmail");
+
+            if (ToolbarTitle != null && !ToolbarTitle.isEmpty()) {
+                String firstName = ToolbarTitle.split(" ")[0];
+                collapsingToolbarLayout.setTitle(firstName);
+            }
+            if (ProfileImage != null) {
+                Glide.with(ProfileActivity.this)
+                        .load(ProfileImage)
+                        .into(profileImage);
+            }
+            if (CoverImage != null) {
+                Glide.with(ProfileActivity.this)
+                        .load(CoverImage)
+                        .into(coverImage);
+            }
+            et_businessName.setText(businessName);
+            et_businessDescription.setText(businessDescription);
+            et_businessEmail.setText(businessEmail);
+
+            List<String> photoUrlsFromDb = (List<String>) document.get("imageUris");
+            if (photoUrlsFromDb != null) {
+                photoUris.clear();
+                for (String url : photoUrlsFromDb) {
+                    photoUris.add(Uri.parse(url));
+                }
+                photoAdapter.notifyDataSetChanged();
+            }
+        }
+    }
+
 
     private void saveBusinessInfo() {
         EditText etBusinessName = findViewById(R.id.et_business_name);
@@ -672,14 +705,14 @@ public class ProfileActivity extends AppCompatActivity {
 
     private void checkFriendRequests() {
         db.collection("friendRequests").document(fuser.getUid())
-                .collection("sentRequests").document(currentUserId)
+                .collection("sentRequests").document(idUsuario)
                 .get()
                 .addOnCompleteListener(task -> {
                     if (task.isSuccessful()) {
                         DocumentSnapshot document = task.getResult();
                         if (document.exists()) {
                             // Hemos enviado una solicitud de amistad
-                            setState(2);
+                            state=2;
                         } else {
                             // Verificar si hemos recibido una solicitud de amistad
                             db.collection("friendRequests").document(fuser.getUid())
@@ -690,10 +723,10 @@ public class ProfileActivity extends AppCompatActivity {
                                             DocumentSnapshot document2 = task2.getResult();
                                             if (document2.exists()) {
                                                 // Hemos recibido una solicitud de amistad
-                                                setState(3);
+                                                state=3;
                                             } else {
                                                 // Usuario que no es amigo
-                                                setState(4);
+                                                state=4;
                                             }
                                         } else {
                                             Log.d(TAG, "Error al verificar las solicitudes recibidas: ", task2.getException());
@@ -706,29 +739,107 @@ public class ProfileActivity extends AppCompatActivity {
                 });
     }
 
-    private void setState(int state) {
-        // Configurar el estado del perfil basado en el valor de state
-        switch (state) {
-            case 0:
-                // Perfil cargando
-                break;
-            case 1:
-                // Usuario agregado como amigo
-                break;
-            case 2:
-                // Hemos enviado solicitud de amistad
-                break;
-            case 3:
-                // Hemos recibido solicitud de amistad
-                break;
-            case 4:
-                // Usuario que no es amigo
-                break;
-            case 5:
-                // Nuestro perfil
-                break;
-        }
+    private void sendFriendRequest(String idUsuario) {
+        // Crear un objeto que represente la solicitud de amistad
+        Map<String, Object> friendRequest = new HashMap<>();
+        friendRequest.put("from", fuser.getUid());
+        friendRequest.put("to", idUsuario);
+        friendRequest.put("timestamp", FieldValue.serverTimestamp());
+
+        // Guardar la solicitud en la colección "sentRequests" del usuario actual
+        db.collection("friendRequests").document(fuser.getUid())
+                .collection("sentRequests").document(idUsuario)
+                .set(friendRequest)
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        // Guardar la solicitud en la colección "receivedRequests" del usuario objetivo
+                        db.collection("friendRequests").document(idUsuario)
+                                .collection("receivedRequests").document(fuser.getUid())
+                                .set(friendRequest)
+                                .addOnCompleteListener(task2 -> {
+                                    if (task2.isSuccessful()) {
+                                        // Solicitud de amistad enviada con éxito
+                                        state = 2; // Actualiza el estado a "Solicitud Enviada"
+                                        switcherState(); // Actualiza la UI según el nuevo estado
+                                        Toast.makeText(this, "Solicitud de amistad enviada", Toast.LENGTH_SHORT).show();
+                                    } else {
+                                        // Error al guardar la solicitud en "receivedRequests"
+                                        Log.d(TAG, "Error al enviar la solicitud de amistad: ", task2.getException());
+                                        Toast.makeText(this, "Error al enviar la solicitud de amistad", Toast.LENGTH_SHORT).show();
+                                    }
+                                });
+                    } else {
+                        // Error al guardar la solicitud en "sentRequests"
+                        Log.d(TAG, "Error al enviar la solicitud de amistad: ", task.getException());
+                        Toast.makeText(this, "Error al enviar la solicitud de amistad", Toast.LENGTH_SHORT).show();
+                    }
+                });
     }
 
+    private void acceptFriendRequest() {
+        // Accede al documento de la solicitud recibida
+        db.collection("friendRequests").document(fuser.getUid())
+                .collection("receivedRequests").document(idUsuario)
+                .get()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        DocumentSnapshot document = task.getResult();
+                        if (document.exists()) {
+                            // Elimina la solicitud de la colección de solicitudes recibidas
+                            db.collection("friendRequests").document(fuser.getUid())
+                                    .collection("receivedRequests").document(idUsuario)
+                                    .delete()
+                                    .addOnCompleteListener(deleteTask -> {
+                                        if (deleteTask.isSuccessful()) {
+                                            // Crea una entrada en la colección de amigos para ambos usuarios
+                                            Map<String, Object> friendship = new HashMap<>();
+                                            friendship.put("timestamp", FieldValue.serverTimestamp());
+
+                                            // Para el usuario actual (fuser) como amigo
+                                            db.collection("friends").document(fuser.getUid())
+                                                    .collection("myFriends").document(idUsuario)
+                                                    .set(friendship)
+                                                    .addOnCompleteListener(setTask -> {
+                                                        if (setTask.isSuccessful()) {
+                                                            // Para el usuario actual (fuser) en la lista de amigos del otro usuario
+                                                            db.collection("friends").document(idUsuario)
+                                                                    .collection("myFriends").document(fuser.getUid())
+                                                                    .set(friendship)
+                                                                    .addOnCompleteListener(setTask2 -> {
+                                                                        if (setTask2.isSuccessful()) {
+                                                                            // Actualiza el estado y la interfaz de usuario
+                                                                            state = 1; // Estado "Usuario agregado como amigo"
+                                                                            switcherState(); // Actualiza la UI según el nuevo estado
+                                                                            Toast.makeText(this, "Ahora son amigos", Toast.LENGTH_SHORT).show();
+                                                                        } else {
+                                                                            // Error al agregar a fuser como amigo del otro usuario
+                                                                            Log.d(TAG, "Error al agregar a fuser como amigo del otro usuario: ", setTask2.getException());
+                                                                            Toast.makeText(this, "Error al aceptar la solicitud de amistad", Toast.LENGTH_SHORT).show();
+                                                                        }
+                                                                    });
+                                                        } else {
+                                                            // Error al agregar al otro usuario como amigo de fuser
+                                                            Log.d(TAG, "Error al agregar al otro usuario como amigo de fuser: ", setTask.getException());
+                                                            Toast.makeText(this, "Error al aceptar la solicitud de amistad", Toast.LENGTH_SHORT).show();
+                                                        }
+                                                    });
+                                        } else {
+                                            // Error al eliminar la solicitud de la colección de recibidas
+                                            Log.d(TAG, "Error al eliminar la solicitud de la colección de recibidas: ", deleteTask.getException());
+                                            Toast.makeText(this, "Error al aceptar la solicitud de amistad", Toast.LENGTH_SHORT).show();
+                                        }
+                                    });
+                        } else {
+                            // Documento de solicitud no encontrado
+                            Log.d(TAG, "Documento de solicitud de amistad no encontrado");
+                            Toast.makeText(this, "Error al aceptar la solicitud de amistad", Toast.LENGTH_SHORT).show();
+                        }
+                    } else {
+                        // Error al acceder al documento de la solicitud recibida
+                        Log.d(TAG, "Error al acceder al documento de la solicitud recibida: ", task.getException());
+                        Toast.makeText(this, "Error al aceptar la solicitud de amistad", Toast.LENGTH_SHORT).show();
+                    }
+                });
+    }
 
 }
