@@ -20,8 +20,9 @@
             app:expandedTitleMarginEnd="0dp"
             app:collapsedTitleTextAppearance="@style/collapsedAppBar"
             app:expandedTitleTextAppearance="@style/expandedAppBar"
+            app:expandedTitleTextColor="@color/colorFont"
             app:expandedTitleMarginBottom="20dp"
-            app:contentScrim="@color/colorPrimary"
+            app:contentScrim="@color/white"
             app:layout_scrollFlags="scroll|exitUntilCollapsed"
             android:layout_height="wrap_content">
 
@@ -92,6 +93,7 @@
                     android:padding="10dp"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:fontFamily="@font/fredoka_regular"
                     android:onClick="editarClick" />
             </FrameLayout>
             <androidx.appcompat.widget.Toolbar
@@ -119,7 +121,11 @@
                 android:id="@+id/your_linear_layout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical">
+                android:orientation="vertical"
+                android:layout_marginLeft="15dp"
+                android:layout_marginRight="15dp"
+                android:layout_marginTop="20dp"
+                android:layout_marginBottom="0dp">
 
                 <EditText
                     android:id="@+id/et_business_name"
@@ -153,6 +159,21 @@
                     android:textSize="12sp"
                     android:enabled="false"/>
             </LinearLayout>
+            <androidx.cardview.widget.CardView
+                android:layout_width="60dp"
+                android:layout_height="60dp"
+                android:layout_gravity="center"
+                app:cardCornerRadius="30dp">
+
+                <ImageButton
+                    android:id="@+id/add_photoButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="@color/white"
+                    android:src="@drawable/plus_math_96px"
+                    android:scaleType="centerCrop"
+                    android:padding="5dp"/>
+            </androidx.cardview.widget.CardView>
 
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/recyv_profile"

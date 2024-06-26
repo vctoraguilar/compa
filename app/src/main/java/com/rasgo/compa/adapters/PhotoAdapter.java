@@ -15,13 +15,14 @@ import com.rasgo.compa.R;
 
 import java.util.List;
 
+
 public class PhotoAdapter extends RecyclerView.Adapter<PhotoAdapter.PhotoViewHolder> {
     private Context context;
-    private List<Uri> photoUrls;
+    private List<Uri> photoUris;
 
-    public PhotoAdapter(Context context, List<Uri> photoUrls) {
+    public PhotoAdapter(Context context, List<Uri> photoUris) {
         this.context = context;
-        this.photoUrls = photoUrls;
+        this.photoUris = photoUris;
     }
 
     @NonNull
@@ -33,13 +34,13 @@ public class PhotoAdapter extends RecyclerView.Adapter<PhotoAdapter.PhotoViewHol
 
     @Override
     public void onBindViewHolder(@NonNull PhotoViewHolder holder, int position) {
-        Uri photoUrl = photoUrls.get(position);
-        Glide.with(context).load(photoUrl).into(holder.photo);
+        Uri photoUri = photoUris.get(position);
+        Glide.with(context).load(photoUri).into(holder.photo);
     }
 
     @Override
     public int getItemCount() {
-        return photoUrls.size();
+        return photoUris.size();
     }
 
     public static class PhotoViewHolder extends RecyclerView.ViewHolder {

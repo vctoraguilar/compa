@@ -27,6 +27,7 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.rasgo.compa.R;
 import com.rasgo.compa.feature.homepage.MainActivity;
+import com.rasgo.compa.feature.welcome.W1Activity;
 import com.rasgo.compa.model.user.user;
 
 public class RegisterActivity extends AppCompatActivity {
@@ -134,14 +135,15 @@ public class RegisterActivity extends AppCompatActivity {
                             usuario.setUserId(userid);
                             usuario.setDisplayName(name);
                             usuario.setEmail(email);
-                            usuario.setPhotoUrl("");
+                            String defaultPhotoUrl = getUriFromDrawable(R.drawable.male_user_96px);
+                            usuario.setPhotoUrl(defaultPhotoUrl);
 
                             db.collection("users").document(userid).set(usuario)
                                     .addOnCompleteListener(new OnCompleteListener<Void>() {
                                         @Override
                                         public void onComplete(@NonNull Task<Void> task) {
                                             if (task.isSuccessful()) {
-                                                Intent intent = new Intent(RegisterActivity.this, MainActivity.class);
+                                                Intent intent = new Intent(RegisterActivity.this, W1Activity.class);
                                                 intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
                                                 startActivity(intent);
                                                 finish();
@@ -157,7 +159,9 @@ public class RegisterActivity extends AppCompatActivity {
                     }
                 });
     }
-
+    private String getUriFromDrawable(int drawableId) {
+        return Uri.parse("android.resource://" + getPackageName() + "/" + drawableId).toString();
+    }
     public void onLoginClick(View view) {
         startActivity(new Intent(this, LoginActivity.class));
         overridePendingTransition(R.anim.slide_in_left, R.anim.stay);

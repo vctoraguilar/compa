@@ -9,7 +9,7 @@
         android:id="@+id/card_searh"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_margin="6dp"
+        android:layout_margin="16dp"
         app:cardElevation="8dp"
         app:cardCornerRadius="15dp"
         android:background="@drawable/card_background">
@@ -27,7 +27,8 @@
                 android:layout_weight="1"
                 android:padding="8dp"
                 android:shadowColor="@color/black"
-                android:background="@color/white" />
+                android:background="@color/white"
+                android:focusedByDefault="false"/>
             <ImageView
                 android:layout_width="30dp"
                 android:layout_height="30dp"
@@ -49,7 +50,7 @@
             android:id="@+id/encuentraCompas"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:padding="8dp"
+            android:padding="2dp"
             android:textAlignment="center"
             android:text="Encuentra Compas"
             android:fontFamily="@font/fredoka_bold"

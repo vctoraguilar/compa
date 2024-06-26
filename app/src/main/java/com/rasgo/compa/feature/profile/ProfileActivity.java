@@ -40,12 +40,14 @@ import com.google.android.gms.auth.api.signin.GoogleSignInClient;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.material.appbar.CollapsingToolbarLayout;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
@@ -62,6 +64,8 @@ import java.text.BreakIterator;
 import java.text.StringCharacterIterator;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
+
 import androidx.core.content.ContextCompat;
 
 public class ProfileActivity extends AppCompatActivity {
@@ -69,6 +73,8 @@ public class ProfileActivity extends AppCompatActivity {
     // Imagenes
     private static final int REQUEST_IMAGE_PICKER_PROFILE = 100;
     private static final int REQUEST_IMAGE_PICKER_COVER = 101;
+    private static final int SELECT_IMAGE_REQUEST = 105;
+
     private static final int STORAGE_PERMISSION_CODE=102;
 
     private String uid="",profileUrl="", coverUrl="";
@@ -84,6 +90,7 @@ public class ProfileActivity extends AppCompatActivity {
         5=nuestro perfil
      */
     private Button profileOptionButton;
+    private ImageButton addPhotoButton;
     private ImageView profileImage, coverImage;
     private Toolbar toolbar;
     private CollapsingToolbarLayout collapsingToolbarLayout;
@@ -101,6 +108,7 @@ public class ProfileActivity extends AppCompatActivity {
 
     public String businessName;
     public String businessDescription;
+    public String businessEmail;
     public String currentUserId;
 
     private DocumentReference reference;
@@ -118,6 +126,9 @@ public class ProfileActivity extends AppCompatActivity {
     public EditText et_businessEmail;
     private PhotoAdapter photoAdapter;
     private List<Uri> photoUris;
+
+    public FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -131,6 +142,14 @@ public class ProfileActivity extends AppCompatActivity {
         fuser = FirebaseAuth.getInstance().getCurrentUser();
         profileImage = findViewById(R.id.profile_image);
         coverImage = findViewById(R.id.profile_cover);
+
+        addPhotoButton = findViewById(R.id.add_photoButton);
+        addPhotoButton.setOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick(View view) {
+                openImageSelector();
+            }
+        });
 
         et_businessName=findViewById(R.id.et_business_name);
         et_businessEmail=findViewById(R.id.et_business_email);
@@ -180,10 +199,22 @@ public class ProfileActivity extends AppCompatActivity {
         editProfile= findViewById(R.id.profile_imageEdit);
         editCover= findViewById(R.id.profile_coverEdit);
 
+        setEditTextEnabled(et_businessName, false);
+        setEditTextEnabled(et_businessEmail, false);
+        setEditTextEnabled(et_businessDescription, false);
+
         setSupportActionBar(toolbar);
         readProfile();
         loadBusinessInfo();
     }
+
+    private void openImageSelector() {
+        Intent intent = new Intent(Intent.ACTION_PICK);
+        intent.setType("image/*");
+        startActivityForResult(intent, SELECT_IMAGE_REQUEST);
+    }
+
+
     private void setEditTextEnabled(EditText editText, boolean enabled) {
         editText.setEnabled(enabled);
 
@@ -295,9 +326,54 @@ public class ProfileActivity extends AppCompatActivity {
             } else {
                 uploadCoverImage();
             }
+        } else if (requestCode == SELECT_IMAGE_REQUEST && resultCode == RESULT_OK && data != null && data.getData() != null) {
+            Uri selectedImageUri = data.getData();
+            if (selectedImageUri != null) {
+                uploadPhoto(selectedImageUri);
+            }
         }
+    }
+    private void uploadPhoto(Uri imageUri) {
+        if (imageUri != null) {
+            StorageReference fileReference = storageReference.child("user_photos/" + currentUser.getUid() + "/" + UUID.randomUUID().toString() + ".jpg");
+            uploadTask = fileReference.putFile(imageUri)
+                    .addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
+                        @Override
+                        public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+                            fileReference.getDownloadUrl().addOnSuccessListener(new OnSuccessListener<Uri>() {
+                                @Override
+                                public void onSuccess(Uri uri) {
+                                    String downloadUri = uri.toString();
+                                    saveImageUriToFirestore(uri);
+                                }
+                            });
+                        }
+                    })
+                    .addOnFailureListener(new OnFailureListener() {
+                        @Override
+                        public void onFailure(@NonNull Exception e) {
+                            Toast.makeText(ProfileActivity.this, "Failed to upload photo: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                        }
+                    });
+        }
+    }
 
-
+    private void saveImageUriToFirestore(Uri uri) {
+        DocumentReference userRef = db.collection("users").document(currentUser.getUid());
+        userRef.update("imageUris", FieldValue.arrayUnion(uri.toString()))
+                .addOnSuccessListener(new OnSuccessListener<Void>() {
+                    @Override
+                    public void onSuccess(Void aVoid) {
+                        addImage(uri);
+                        Toast.makeText(ProfileActivity.this, "Image added successfully", Toast.LENGTH_SHORT).show();
+                    }
+                })
+                .addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        Toast.makeText(ProfileActivity.this, "Error adding image: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    }
+                });
     }
 
     private void uploadCoverImage() {
@@ -409,7 +485,7 @@ public class ProfileActivity extends AppCompatActivity {
                         }
                     });
         } else {
-            Toast.makeText(ProfileActivity.this, "No file selected", Toast.LENGTH_SHORT).show();
+            Toast.makeText(ProfileActivity.this, "Ningún archivo seleccionado", Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -432,7 +508,6 @@ public class ProfileActivity extends AppCompatActivity {
     }
 
     private void readProfile() {
-        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
         if (currentUser != null) {
             currentUserId = currentUser.getUid();
             db = FirebaseFirestore.getInstance();
@@ -445,7 +520,7 @@ public class ProfileActivity extends AppCompatActivity {
                                 DocumentSnapshot document = task.getResult();
                                 if (document.exists()) {
                                     user duser = document.toObject(user.class);
-                                    if (currentUser != null && idUsuario.equals(currentUser.getUid())) {
+                                    if (currentUser != null && idUsuario.equals(currentUser.getUid())) { //Nosotros mismos
                                         state=5;
                                         if (duser != null) {
                                             Log.d(TAG, document.getId() + " => " + document.getData());
@@ -454,6 +529,7 @@ public class ProfileActivity extends AppCompatActivity {
                                             String CoverImage = document.getString("coverUrl");
                                             businessName = document.getString("businessName");
                                             businessDescription = document.getString("businessDescription");
+                                            businessEmail=document.getString("businessEmail");
                                             if (ToolbarTitle != null && !ToolbarTitle.isEmpty()) {
                                                 String firstName = ToolbarTitle.split(" ")[0];
                                                 collapsingToolbarLayout.setTitle(firstName);
@@ -468,9 +544,22 @@ public class ProfileActivity extends AppCompatActivity {
                                                         .load(CoverImage)
                                                         .into(coverImage);
                                             }
+                                            et_businessName.setText(businessName);
+                                            et_businessDescription.setText(businessDescription);
+                                            et_businessEmail.setText(businessEmail);
+
+                                            List<String> photoUrlsFromDb = (List<String>) document.get("imageUris");
+                                            if (photoUrlsFromDb != null) {
+                                                photoUris.clear();
+                                                for (String url : photoUrlsFromDb) {
+                                                    photoUris.add(Uri.parse(url));
+                                                }
+                                                photoAdapter.notifyDataSetChanged();
+                                            }
                                         }
                                     }
-                                    else {
+                                    else {   //Otro usuario
+
                                         String ToolbarTitle2=nombreUsuario;
                                         if (ToolbarTitle2 != null && !ToolbarTitle2.isEmpty()) {
                                             String firstName = ToolbarTitle2.split(" ")[0];
@@ -482,6 +571,20 @@ public class ProfileActivity extends AppCompatActivity {
                                         Glide.with(ProfileActivity.this)
                                                     .load(urlCoverAux)
                                                     .into(coverImage);
+                                        et_businessName.setText(businessName);
+                                        et_businessDescription.setText(businessDescription);
+                                        et_businessEmail.setText(businessEmail);
+
+
+                                        List<String> photoUrlsFromDb = (List<String>) document.get("imageUris");
+                                        if (photoUrlsFromDb != null) {
+                                            photoUris.clear();
+                                            for (String url : photoUrlsFromDb) {
+                                                photoUris.add(Uri.parse(url));
+                                            }
+                                            photoAdapter.notifyDataSetChanged();
+                                        }
+
                                         state=4;
                                     }
                                     switcherState();
@@ -558,6 +661,13 @@ public class ProfileActivity extends AppCompatActivity {
         } else {
             Log.d(TAG, "No hay usuario autenticado");
         }
+    }
+    private void updateRecyclerView(List<Uri> photoUrls) {
+        RecyclerView recyclerView = findViewById(R.id.recyv_profile);
+        recyclerView.setLayoutManager(new LinearLayoutManager(this));
+
+        PhotoAdapter adapter = new PhotoAdapter(this, photoUrls);
+        recyclerView.setAdapter(adapter);
     }
 
     private void checkFriendRequests() {

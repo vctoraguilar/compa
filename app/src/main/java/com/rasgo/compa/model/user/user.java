@@ -11,6 +11,8 @@ public class user {
     private String businessDescription;
     private String fcmToken;
 
+
+
     public user() {
     }
 
