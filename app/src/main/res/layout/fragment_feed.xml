@@ -13,29 +13,20 @@
         app:cardElevation="8dp"
         app:cardCornerRadius="15dp"
         android:background="@drawable/card_background">
-        <LinearLayout
-            android:id="@+id/searchBar"
+
+
+        <androidx.appcompat.widget.SearchView
+            android:id="@+id/searchEditText"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:padding="6dp">
+            android:padding="8dp"
+            android:shadowColor="@color/black"
+            android:background="@color/white"
+            android:focusedByDefault="false"
+            app:queryHint="Buscar Compas"
+            android:gravity="center"
+            app:iconifiedByDefault="false"/>
 
-            <EditText
-                android:id="@+id/searchEditText"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:padding="8dp"
-                android:shadowColor="@color/black"
-                android:background="@color/white"
-                android:focusedByDefault="false"/>
-            <ImageView
-                android:layout_width="30dp"
-                android:layout_height="30dp"
-                android:src="@drawable/ic_search"
-                android:layout_gravity="center_vertical" />
-
-        </LinearLayout>
     </androidx.cardview.widget.CardView>
     <!-- Section titles -->
     <LinearLayout

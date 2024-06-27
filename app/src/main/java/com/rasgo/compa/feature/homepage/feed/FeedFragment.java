@@ -36,17 +36,14 @@ import com.rasgo.compa.model.user.user;
 
 import java.util.ArrayList;
 
-/**
- * A simple {@link Fragment} subclass.
- * Use the {@link FeedFragment#newInstance} factory method to
- * create an instance of this fragment.
- */
+import androidx.appcompat.widget.SearchView;
 
 
 public class FeedFragment extends Fragment {
 
     private FirebaseFirestore db;
     private UsersAdapter mUsersAdapter;
+    private RecyclerView recyclerView;
     private ArrayList<user> userList = new ArrayList<>();
 
     public FeedFragment() {
@@ -57,12 +54,13 @@ public class FeedFragment extends Fragment {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+
     }
     @Override
     public View onCreateView( LayoutInflater inflater, ViewGroup container,  Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_feed, container, false);
 
-        RecyclerView recyclerView = view.findViewById(R.id.recView);
+        recyclerView = view.findViewById(R.id.recView);
         recyclerView.setLayoutManager(new GridLayoutManager(getContext(), 2)); // Configurar el RecyclerView con 2 columnas
         mUsersAdapter = new UsersAdapter(requireContext(), userList);
         recyclerView.setAdapter(mUsersAdapter);
@@ -70,9 +68,22 @@ public class FeedFragment extends Fragment {
         // Inicializar Firestore
         db = FirebaseFirestore.getInstance();
 
-        // Cargar productos en productList y notificar al adaptador
+                // Cargar productos en productList y notificar al adaptador
         ListUsers();
 
+        SearchView svSearch = view.findViewById(R.id.searchEditText);
+        svSearch.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+            @Override
+            public boolean onQueryTextSubmit(String query) {
+                return false;
+            }
+
+            @Override
+            public boolean onQueryTextChange(String newText) {
+                searchUser(newText);
+                return true;
+            }
+        });
         return view;
     }
 
@@ -100,5 +111,16 @@ public class FeedFragment extends Fragment {
                         Log.d(TAG, "Error obteniendo documentos: ", task.getException());
                     }
                 });
+    }
+    private void searchUser(String newText) {
+        ArrayList<user> filterUsers = new ArrayList<>();
+        for (user obj : userList) {
+            if (obj.getDisplayName().toLowerCase().contains(newText.toLowerCase()))
+            {
+                filterUsers.add(obj);
+            }
+        }
+        UsersAdapter adapterUser = new UsersAdapter(requireContext(), filterUsers);
+        recyclerView.setAdapter(adapterUser);
     }
 }

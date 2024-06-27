@@ -43,6 +43,7 @@ import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.material.appbar.CollapsingToolbarLayout;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentReference;
@@ -72,6 +73,12 @@ import androidx.core.content.ContextCompat;
 
 public class ProfileActivity extends AppCompatActivity {
 
+    private static final int STATE_LOADING = 0;
+    private static final int STATE_FRIEND = 1;
+    private static final int STATE_REQUEST_SENT = 2;
+    private static final int STATE_REQUEST_RECEIVED = 3;
+    private static final int STATE_NOT_FRIEND = 4;
+    private static final int STATE_MY_PROFILE = 5;
     // Imagenes
     private static final int REQUEST_IMAGE_PICKER_PROFILE = 100;
     private static final int REQUEST_IMAGE_PICKER_COVER = 101;
@@ -92,7 +99,7 @@ public class ProfileActivity extends AppCompatActivity {
         5=nuestro perfil
      */
     private Button profileOptionButton;
-    private ImageButton addPhotoButton;
+    private FloatingActionButton addPhotoButton;
     private ImageView profileImage, coverImage;
     private Toolbar toolbar;
     private CollapsingToolbarLayout collapsingToolbarLayout;
@@ -108,9 +115,6 @@ public class ProfileActivity extends AppCompatActivity {
     public String urlCoverAux;
     public int state;
 
-    public String businessName;
-    public String businessDescription;
-    public String businessEmail;
     public String currentUserId;
 
     private DocumentReference reference;
@@ -208,9 +212,6 @@ public class ProfileActivity extends AppCompatActivity {
         setSupportActionBar(toolbar);
         readProfile();
         loadBusinessInfo();
-
-
-
     }
 
     private void openImageSelector() {
@@ -218,8 +219,6 @@ public class ProfileActivity extends AppCompatActivity {
         intent.setType("image/*");
         startActivityForResult(intent, SELECT_IMAGE_REQUEST);
     }
-
-
     private void setEditTextEnabled(EditText editText, boolean enabled) {
         editText.setEnabled(enabled);
 
@@ -239,69 +238,7 @@ public class ProfileActivity extends AppCompatActivity {
         photoUris.add(uri);
         photoAdapter.notifyItemInserted(photoUris.size() - 1);
     }
-    private void switcherState() {
-        switch (state) {
-            case 0:
-                // Perfil cargando
-                break;
-            case 1:
-                // Usuario agregado como amigo
-                profileOptionButton.setText("Amigos");
-                profileOptionButton.setEnabled(false);
-                break;
-            case 2:
-                // Hemos enviado solicitud de amistad
-                profileOptionButton.setText("Solicitud Enviada");
-                profileOptionButton.setEnabled(false);
-                break;
-            case 3:
-                // Hemos recibido solicitud de amistad
-                profileOptionButton.setText("Aceptar Solicitud");
-                profileOptionButton.setOnClickListener(v -> {
-                    checkFriendRequests();
-                    acceptFriendRequest();
-                });
-                break;
-            case 4:
-                // Usuario que no es amigo
-                profileOptionButton.setText("Seamos Compas");
-                profileOptionButton.setOnClickListener(v -> {
-                    checkFriendRequests();
-                    sendFriendRequest(idUsuario);
-                });
-                break;
-            case 5:
-                // Mi perfil
-                profileOptionButton.setOnClickListener(new View.OnClickListener() {
 
-                    @Override
-                    public void onClick(View v) {
-                        if (profileOptionButton.getText().toString().equals("Editar Perfil")){
-                            profileOptionSelect=true;
-                            profileOptionButton.setText("Guardar");
-                            editProfile.setVisibility(View.VISIBLE);
-                            editCover.setVisibility(View.VISIBLE);
-                            setEditTextEnabled(et_businessName, true);
-                            setEditTextEnabled(et_businessEmail, true);
-                            setEditTextEnabled(et_businessDescription, true);
-
-                        }else{
-                            profileOptionButton.setText("Editar Perfil");
-                            saveBusinessInfo();
-                            editProfile.setVisibility(View.INVISIBLE);
-                            editCover.setVisibility(View.INVISIBLE);
-                            setEditTextEnabled(et_businessName, false);
-                            setEditTextEnabled(et_businessEmail, false);
-                            setEditTextEnabled(et_businessDescription, false);
-                        }
-                    }
-                });
-                break;
-            default:
-                // Estado desconocido
-                break;
-        }
-    }
 
     private void openCoverGallery() {
         Intent intent = new Intent();
@@ -503,143 +440,6 @@ public class ProfileActivity extends AppCompatActivity {
             Toast.makeText(ProfileActivity.this, "Ningún archivo seleccionado", Toast.LENGTH_SHORT).show();
         }
     }
-
-
-    private void updateProfileImageUrl(String url) {
-        currentUserId = fuser.getUid();
-        db.collection("users").document(currentUserId).update("photoUrl", url)
-                .addOnCompleteListener(new OnCompleteListener<Void>() {
-                    @Override
-                    public void onComplete(@NonNull Task<Void> task) {
-                        if (task.isSuccessful()) {
-                            Glide.with(ProfileActivity.this).load(url).into(profileImage);
-                            Toast.makeText(ProfileActivity.this, "Upload successful", Toast.LENGTH_SHORT).show();
-                            readProfile();
-                        } else {
-                            Toast.makeText(ProfileActivity.this, "Error actualizando URL de imagen en Firestore", Toast.LENGTH_SHORT).show();
-                        }
-                    }
-                });
-    }
-
-    private void readProfile() {
-        if (currentUser != null) {
-            currentUserId = currentUser.getUid();
-            db = FirebaseFirestore.getInstance();
-            db.collection("users").document(idUsuario != null ? idUsuario : currentUserId)
-                    .get()
-                    .addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
-                        @Override
-                        public void onComplete(@NonNull Task<DocumentSnapshot> task) {
-                            if (task.isSuccessful()) {
-                                DocumentSnapshot document = task.getResult();
-                                if (document.exists()) {
-                                    user duser = document.toObject(user.class);
-                                    if (idUsuario == null || currentUserId.equals(idUsuario)) {
-                                        // Código para el usuario actual (igual que antes)
-                                        state=5;
-                                        handleUserProfile(document);
-                                    } else {
-                                        // Código para el usuario seleccionado
-
-                                        state=4;
-                                        handleSelectedUserProfile(document);
-
-                                    }
-                                    switcherState();
-                                } else {
-                                    Toast.makeText(ProfileActivity.this, "No se encontró documento para el usuario actual", Toast.LENGTH_SHORT).show();
-                                }
-
-                            } else {
-                                Toast.makeText(ProfileActivity.this, "Error obteniendo documento", Toast.LENGTH_SHORT).show();
-                            }
-                        }
-                    });
-        } else {
-            Toast.makeText(ProfileActivity.this, "No hay usuario autenticado", Toast.LENGTH_SHORT).show();
-        }
-    }
-
-    private void handleUserProfile(DocumentSnapshot document) {
-        user duser = document.toObject(user.class);
-        if (duser != null) {
-            String ToolbarTitle = document.getString("displayName");
-            String ProfileImage = document.getString("photoUrl");
-            String CoverImage = document.getString("coverUrl");
-            businessName = document.getString("businessName");
-            businessDescription = document.getString("businessDescription");
-            businessEmail = document.getString("businessEmail");
-
-            if (ToolbarTitle != null && !ToolbarTitle.isEmpty()) {
-                String firstName = ToolbarTitle.split(" ")[0];
-                collapsingToolbarLayout.setTitle(firstName);
-            }
-            if (ProfileImage != null) {
-                Glide.with(ProfileActivity.this)
-                        .load(ProfileImage)
-                        .into(profileImage);
-            }
-            if (CoverImage != null) {
-                Glide.with(ProfileActivity.this)
-                        .load(CoverImage)
-                        .into(coverImage);
-            }
-            et_businessName.setText(businessName);
-            et_businessDescription.setText(businessDescription);
-            et_businessEmail.setText(businessEmail);
-
-            List<String> photoUrlsFromDb = (List<String>) document.get("imageUris");
-            if (photoUrlsFromDb != null) {
-                photoUris.clear();
-                for (String url : photoUrlsFromDb) {
-                    photoUris.add(Uri.parse(url));
-                }
-                photoAdapter.notifyDataSetChanged();
-            }
-        }
-    }
-
-    private void handleSelectedUserProfile(DocumentSnapshot document) {
-        user duser = document.toObject(user.class);
-        if (duser != null) {
-            String ToolbarTitle = document.getString("displayName");
-            String ProfileImage = document.getString("photoUrl");
-            String CoverImage = document.getString("coverUrl");
-            businessName = document.getString("businessName");
-            businessDescription = document.getString("businessDescription");
-            businessEmail = document.getString("businessEmail");
-
-            if (ToolbarTitle != null && !ToolbarTitle.isEmpty()) {
-                String firstName = ToolbarTitle.split(" ")[0];
-                collapsingToolbarLayout.setTitle(firstName);
-            }
-            if (ProfileImage != null) {
-                Glide.with(ProfileActivity.this)
-                        .load(ProfileImage)
-                        .into(profileImage);
-            }
-            if (CoverImage != null) {
-                Glide.with(ProfileActivity.this)
-                        .load(CoverImage)
-                        .into(coverImage);
-            }
-            et_businessName.setText(businessName);
-            et_businessDescription.setText(businessDescription);
-            et_businessEmail.setText(businessEmail);
-
-            List<String> photoUrlsFromDb = (List<String>) document.get("imageUris");
-            if (photoUrlsFromDb != null) {
-                photoUris.clear();
-                for (String url : photoUrlsFromDb) {
-                    photoUris.add(Uri.parse(url));
-                }
-                photoAdapter.notifyDataSetChanged();
-            }
-        }
-    }
-
-
     private void saveBusinessInfo() {
         EditText etBusinessName = findViewById(R.id.et_business_name);
         EditText etBusinessDescription = findViewById(R.id.et_business_description);
@@ -664,7 +464,6 @@ public class ProfileActivity extends AppCompatActivity {
                     });
         }
     }
-
     private void loadBusinessInfo() {
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
         if (currentUser != null) {
@@ -695,81 +494,233 @@ public class ProfileActivity extends AppCompatActivity {
             Log.d(TAG, "No hay usuario autenticado");
         }
     }
-    private void updateRecyclerView(List<Uri> photoUrls) {
-        RecyclerView recyclerView = findViewById(R.id.recyv_profile);
-        recyclerView.setLayoutManager(new LinearLayoutManager(this));
 
-        PhotoAdapter adapter = new PhotoAdapter(this, photoUrls);
-        recyclerView.setAdapter(adapter);
+    private void updateProfileImageUrl(String url) {
+        currentUserId = fuser.getUid();
+        db.collection("users").document(currentUserId).update("photoUrl", url)
+                .addOnCompleteListener(new OnCompleteListener<Void>() {
+                    @Override
+                    public void onComplete(@NonNull Task<Void> task) {
+                        if (task.isSuccessful()) {
+                            Glide.with(ProfileActivity.this).load(url).into(profileImage);
+                            Toast.makeText(ProfileActivity.this, "Upload successful", Toast.LENGTH_SHORT).show();
+                            readProfile();
+                        } else {
+                            Toast.makeText(ProfileActivity.this, "Error actualizando URL de imagen en Firestore", Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                });
     }
 
-    private void checkFriendRequests() {
-        db.collection("friendRequests").document(fuser.getUid())
-                .collection("sentRequests").document(idUsuario)
+    private void switcherState() {
+        switch (state) {
+            case STATE_LOADING:
+                // Perfil cargando
+                break;
+            case STATE_FRIEND:
+                handleFriendState();
+                break;
+            case STATE_REQUEST_SENT:
+                handleRequestSentState();
+                break;
+            case STATE_REQUEST_RECEIVED:
+                handleRequestReceivedState();
+                break;
+            case STATE_NOT_FRIEND:
+                handleNotFriendState();
+                break;
+            case STATE_MY_PROFILE:
+                handleMyProfileState();
+                break;
+            default:
+                // Estado desconocido
+                break;
+        }
+    }
+
+    private void handleFriendState() {
+        profileOptionButton.setText("Amigos");
+        profileOptionButton.setEnabled(false);
+    }
+
+    private void handleRequestSentState() {
+        profileOptionButton.setText("Solicitud Enviada");
+        profileOptionButton.setEnabled(false);
+    }
+
+    private void handleRequestReceivedState() {
+        profileOptionButton.setText("Aceptar Solicitud");
+        profileOptionButton.setOnClickListener(v -> acceptFriendRequest());
+    }
+
+    private void handleNotFriendState() {
+        profileOptionButton.setText("Seamos Compas");
+        profileOptionButton.setOnClickListener(v -> sendFriendRequest(idUsuario));
+    }
+
+    private void handleMyProfileState() {
+        profileOptionButton.setOnClickListener(v -> {
+            if (profileOptionButton.getText().toString().equals("Editar Perfil")) {
+                enableProfileEditing();
+            } else {
+                saveProfileEdits();
+            }
+        });
+    }
+
+    private void enableProfileEditing() {
+        profileOptionSelect = true;
+        profileOptionButton.setText("Guardar");
+        editProfile.setVisibility(View.VISIBLE);
+        editCover.setVisibility(View.VISIBLE);
+        setEditTextEnabled(et_businessName, true);
+        setEditTextEnabled(et_businessEmail, true);
+        setEditTextEnabled(et_businessDescription, true);
+    }
+
+    private void saveProfileEdits() {
+        profileOptionButton.setText("Editar Perfil");
+        saveBusinessInfo();
+        editProfile.setVisibility(View.INVISIBLE);
+        editCover.setVisibility(View.INVISIBLE);
+        setEditTextEnabled(et_businessName, false);
+        setEditTextEnabled(et_businessEmail, false);
+        setEditTextEnabled(et_businessDescription, false);
+    }
+
+    private void readProfile() {
+        if (currentUser == null) {
+            Toast.makeText(ProfileActivity.this, "No hay usuario autenticado", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        currentUserId = currentUser.getUid();
+        db = FirebaseFirestore.getInstance();
+        db.collection("users").document(idUsuario != null ? idUsuario : currentUserId)
                 .get()
                 .addOnCompleteListener(task -> {
                     if (task.isSuccessful()) {
                         DocumentSnapshot document = task.getResult();
                         if (document.exists()) {
-                            // Hemos enviado una solicitud de amistad
-                            state=2;
+                            if (idUsuario == null || currentUserId.equals(idUsuario)) {
+                                state = STATE_MY_PROFILE;
+                                handleUserProfile(document);
+                            } else {
+                                handleSelectedUserProfile(document);
+                                checkFriendRequests(currentUserId, idUsuario);
+                            }
                         } else {
-                            // Verificar si hemos recibido una solicitud de amistad
-                            db.collection("friendRequests").document(fuser.getUid())
-                                    .collection("receivedRequests").document(currentUserId)
-                                    .get()
-                                    .addOnCompleteListener(task2 -> {
-                                        if (task2.isSuccessful()) {
-                                            DocumentSnapshot document2 = task2.getResult();
-                                            if (document2.exists()) {
-                                                // Hemos recibido una solicitud de amistad
-                                                state=3;
-                                            } else {
-                                                // Usuario que no es amigo
-                                                state=4;
-                                            }
-                                        } else {
-                                            Log.d(TAG, "Error al verificar las solicitudes recibidas: ", task2.getException());
-                                        }
-                                    });
+                            Toast.makeText(ProfileActivity.this, "No se encontró documento para el usuario actual", Toast.LENGTH_SHORT).show();
                         }
                     } else {
-                        Log.d(TAG, "Error al verificar las solicitudes enviadas: ", task.getException());
+                        Toast.makeText(ProfileActivity.this, "Error obteniendo documento", Toast.LENGTH_SHORT).show();
                     }
                 });
     }
 
+    private void handleUserProfile(DocumentSnapshot document) {
+        user duser = document.toObject(user.class);
+        if (duser == null) return;
+
+        updateProfileUI(document);
+        updatePhotoUris(document);
+    }
+
+    private void handleSelectedUserProfile(DocumentSnapshot document) {
+        user duser = document.toObject(user.class);
+        if (duser == null) return;
+
+        updateProfileUI(document);
+        updatePhotoUris(document);
+    }
+
+    private void updateProfileUI(DocumentSnapshot document) {
+        String toolbarTitle = document.getString("displayName");
+        String ProfileImage = document.getString("photoUrl");
+        String CoverImage = document.getString("coverUrl");
+        String businessName = document.getString("businessName");
+        String businessDescription = document.getString("businessDescription");
+        String businessEmail = document.getString("businessEmail");
+
+        if (toolbarTitle != null && !toolbarTitle.isEmpty()) {
+            String firstName = toolbarTitle.split(" ")[0];
+            collapsingToolbarLayout.setTitle(firstName);
+        }
+        if (ProfileImage != null) {
+            Glide.with(ProfileActivity.this).load(ProfileImage).into(profileImage);
+        }
+        if (CoverImage != null) {
+            Glide.with(ProfileActivity.this).load(CoverImage).into(coverImage);
+        }
+        et_businessName.setText(businessName);
+        et_businessDescription.setText(businessDescription);
+        et_businessEmail.setText(businessEmail);
+    }
+
+    private void updatePhotoUris(DocumentSnapshot document) {
+        List<String> photoUrlsFromDb = (List<String>) document.get("imageUris");
+        if (photoUrlsFromDb == null) return;
+
+        photoUris.clear();
+        for (String url : photoUrlsFromDb) {
+            photoUris.add(Uri.parse(url));
+        }
+        photoAdapter.notifyDataSetChanged();
+    }
+
+    private void checkFriendRequests(String currentUserId, String idUsuario) {
+        db.collection("friendRequests").document(currentUserId)
+                .collection("sentRequests").document(idUsuario)
+                .get()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful() && task.getResult().exists()) {
+                        state = STATE_REQUEST_SENT;
+                        switcherState();
+                    } else {
+                        checkReceivedFriendRequests(currentUserId, idUsuario);
+                    }
+                });
+    }
+
+    private void checkReceivedFriendRequests(String currentUserId, String idUsuario) {
+        db.collection("friendRequests").document(currentUserId)
+                .collection("receivedRequests").document(idUsuario)
+                .get()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful() && task.getResult().exists()) {
+                        state = STATE_REQUEST_RECEIVED;
+                    } else {
+                        state = STATE_NOT_FRIEND;
+                    }
+                    switcherState();
+                });
+    }
+
+
     private void sendFriendRequest(String idUsuario) {
-        // Crear un objeto que represente la solicitud de amistad
         Map<String, Object> friendRequest = new HashMap<>();
         friendRequest.put("from", fuser.getUid());
         friendRequest.put("to", idUsuario);
         friendRequest.put("timestamp", FieldValue.serverTimestamp());
 
-        // Guardar la solicitud en la colección "sentRequests" del usuario actual
         db.collection("friendRequests").document(fuser.getUid())
                 .collection("sentRequests").document(idUsuario)
                 .set(friendRequest)
                 .addOnCompleteListener(task -> {
                     if (task.isSuccessful()) {
-                        // Guardar la solicitud en la colección "receivedRequests" del usuario objetivo
                         db.collection("friendRequests").document(idUsuario)
                                 .collection("receivedRequests").document(fuser.getUid())
                                 .set(friendRequest)
                                 .addOnCompleteListener(task2 -> {
                                     if (task2.isSuccessful()) {
-                                        // Solicitud de amistad enviada con éxito
-                                        state = 2; // Actualiza el estado a "Solicitud Enviada"
-                                        switcherState(); // Actualiza la UI según el nuevo estado
+                                        state = STATE_REQUEST_SENT;
+                                        switcherState();
                                         Toast.makeText(this, "Solicitud de amistad enviada", Toast.LENGTH_SHORT).show();
                                     } else {
-                                        // Error al guardar la solicitud en "receivedRequests"
                                         Log.d(TAG, "Error al enviar la solicitud de amistad: ", task2.getException());
                                         Toast.makeText(this, "Error al enviar la solicitud de amistad", Toast.LENGTH_SHORT).show();
                                     }
                                 });
                     } else {
-                        // Error al guardar la solicitud en "sentRequests"
                         Log.d(TAG, "Error al enviar la solicitud de amistad: ", task.getException());
                         Toast.makeText(this, "Error al enviar la solicitud de amistad", Toast.LENGTH_SHORT).show();
                     }
@@ -777,7 +728,6 @@ public class ProfileActivity extends AppCompatActivity {
     }
 
     private void acceptFriendRequest() {
-        // Accede al documento de la solicitud recibida
         db.collection("friendRequests").document(fuser.getUid())
                 .collection("receivedRequests").document(idUsuario)
                 .get()
@@ -785,58 +735,56 @@ public class ProfileActivity extends AppCompatActivity {
                     if (task.isSuccessful()) {
                         DocumentSnapshot document = task.getResult();
                         if (document.exists()) {
-                            // Elimina la solicitud de la colección de solicitudes recibidas
-                            db.collection("friendRequests").document(fuser.getUid())
-                                    .collection("receivedRequests").document(idUsuario)
-                                    .delete()
-                                    .addOnCompleteListener(deleteTask -> {
-                                        if (deleteTask.isSuccessful()) {
-                                            // Crea una entrada en la colección de amigos para ambos usuarios
-                                            Map<String, Object> friendship = new HashMap<>();
-                                            friendship.put("timestamp", FieldValue.serverTimestamp());
-
-                                            // Para el usuario actual (fuser) como amigo
-                                            db.collection("friends").document(fuser.getUid())
-                                                    .collection("myFriends").document(idUsuario)
-                                                    .set(friendship)
-                                                    .addOnCompleteListener(setTask -> {
-                                                        if (setTask.isSuccessful()) {
-                                                            // Para el usuario actual (fuser) en la lista de amigos del otro usuario
-                                                            db.collection("friends").document(idUsuario)
-                                                                    .collection("myFriends").document(fuser.getUid())
-                                                                    .set(friendship)
-                                                                    .addOnCompleteListener(setTask2 -> {
-                                                                        if (setTask2.isSuccessful()) {
-                                                                            // Actualiza el estado y la interfaz de usuario
-                                                                            state = 1; // Estado "Usuario agregado como amigo"
-                                                                            switcherState(); // Actualiza la UI según el nuevo estado
-                                                                            Toast.makeText(this, "Ahora son amigos", Toast.LENGTH_SHORT).show();
-                                                                        } else {
-                                                                            // Error al agregar a fuser como amigo del otro usuario
-                                                                            Log.d(TAG, "Error al agregar a fuser como amigo del otro usuario: ", setTask2.getException());
-                                                                            Toast.makeText(this, "Error al aceptar la solicitud de amistad", Toast.LENGTH_SHORT).show();
-                                                                        }
-                                                                    });
-                                                        } else {
-                                                            // Error al agregar al otro usuario como amigo de fuser
-                                                            Log.d(TAG, "Error al agregar al otro usuario como amigo de fuser: ", setTask.getException());
-                                                            Toast.makeText(this, "Error al aceptar la solicitud de amistad", Toast.LENGTH_SHORT).show();
-                                                        }
-                                                    });
-                                        } else {
-                                            // Error al eliminar la solicitud de la colección de recibidas
-                                            Log.d(TAG, "Error al eliminar la solicitud de la colección de recibidas: ", deleteTask.getException());
-                                            Toast.makeText(this, "Error al aceptar la solicitud de amistad", Toast.LENGTH_SHORT).show();
-                                        }
-                                    });
+                            deleteReceivedRequest();
                         } else {
-                            // Documento de solicitud no encontrado
                             Log.d(TAG, "Documento de solicitud de amistad no encontrado");
                             Toast.makeText(this, "Error al aceptar la solicitud de amistad", Toast.LENGTH_SHORT).show();
                         }
                     } else {
-                        // Error al acceder al documento de la solicitud recibida
                         Log.d(TAG, "Error al acceder al documento de la solicitud recibida: ", task.getException());
+                        Toast.makeText(this, "Error al aceptar la solicitud de amistad", Toast.LENGTH_SHORT).show();
+                    }
+                });
+    }
+
+    private void deleteReceivedRequest() {
+        db.collection("friendRequests").document(fuser.getUid())
+                .collection("receivedRequests").document(idUsuario)
+                .delete()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        createFriendship();
+                    } else {
+                        Log.d(TAG, "Error al eliminar la solicitud de la colección de recibidas: ", task.getException());
+                        Toast.makeText(this, "Error al aceptar la solicitud de amistad", Toast.LENGTH_SHORT).show();
+                    }
+                });
+    }
+
+    private void createFriendship() {
+        Map<String, Object> friendship = new HashMap<>();
+        friendship.put("timestamp", FieldValue.serverTimestamp());
+
+        db.collection("friends").document(fuser.getUid())
+                .collection("myFriends").document(idUsuario)
+                .set(friendship)
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        db.collection("friends").document(idUsuario)
+                                .collection("myFriends").document(fuser.getUid())
+                                .set(friendship)
+                                .addOnCompleteListener(task2 -> {
+                                    if (task2.isSuccessful()) {
+                                        state = STATE_FRIEND;
+                                        switcherState();
+                                        Toast.makeText(this, "Ahora son amigos", Toast.LENGTH_SHORT).show();
+                                    } else {
+                                        Log.d(TAG, "Error al agregar a fuser como amigo del otro usuario: ", task2.getException());
+                                        Toast.makeText(this, "Error al aceptar la solicitud de amistad", Toast.LENGTH_SHORT).show();
+                                    }
+                                });
+                    } else {
+                        Log.d(TAG, "Error al agregar al otro usuario como amigo de fuser: ", task.getException());
                         Toast.makeText(this, "Error al aceptar la solicitud de amistad", Toast.LENGTH_SHORT).show();
                     }
                 });
