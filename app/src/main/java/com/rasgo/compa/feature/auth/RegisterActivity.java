@@ -1,5 +1,7 @@
 package com.rasgo.compa.feature.auth;
 
+import static androidx.core.content.ContentProviderCompat.requireContext;
+
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
@@ -29,6 +31,13 @@ import com.rasgo.compa.R;
 import com.rasgo.compa.feature.homepage.MainActivity;
 import com.rasgo.compa.feature.welcome.W1Activity;
 import com.rasgo.compa.model.user.user;
+
+import io.getstream.chat.android.client.ChatClient;
+import io.getstream.chat.android.client.logger.ChatLogLevel;
+import io.getstream.chat.android.models.User;
+import io.getstream.chat.android.offline.plugin.factory.StreamOfflinePluginFactory;
+import io.getstream.chat.android.state.plugin.config.StatePluginConfig;
+import io.getstream.chat.android.state.plugin.factory.StreamStatePluginFactory;
 
 public class RegisterActivity extends AppCompatActivity {
 
@@ -145,6 +154,7 @@ public class RegisterActivity extends AppCompatActivity {
                                             if (task.isSuccessful()) {
                                                 Intent intent = new Intent(RegisterActivity.this, W1Activity.class);
                                                 intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
+                                                createUserChat(usuario);
                                                 startActivity(intent);
                                                 finish();
                                             } else {
@@ -159,6 +169,33 @@ public class RegisterActivity extends AppCompatActivity {
                     }
                 });
     }
+
+    private void createUserChat(user usuario) {
+        StreamOfflinePluginFactory streamOfflinePluginFactory = new StreamOfflinePluginFactory(
+                getApplicationContext()
+        );
+        StreamStatePluginFactory streamStatePluginFactory = new StreamStatePluginFactory(
+                new StatePluginConfig(true, true), getApplicationContext()
+        );
+
+        // Step 2 - Set up the client for API calls with the plugin for offline storage
+        ChatClient client = new ChatClient.Builder("7r7sx9khusmb", getApplicationContext())
+                .withPlugins(streamOfflinePluginFactory, streamStatePluginFactory)
+                .logLevel(ChatLogLevel.ALL) // Set to NOTHING in prod
+                .build();
+
+        User user = new User.Builder()
+                .withId(usuario.getUserId())
+                .withName(usuario.getDisplayName().toString())
+                .withImage(usuario.getPhotoUrl().toString())
+                .build();
+
+        client.connectUser(
+                user,
+                client.devToken(user.getId())
+        ).enqueue();
+    }
+
     private String getUriFromDrawable(int drawableId) {
         return Uri.parse("android.resource://" + getPackageName() + "/" + drawableId).toString();
     }

@@ -51,6 +51,13 @@ import com.google.android.gms.common.api.ApiException;
 import java.util.HashMap;
 import java.util.Map;
 
+import io.getstream.chat.android.client.ChatClient;
+import io.getstream.chat.android.client.logger.ChatLogLevel;
+import io.getstream.chat.android.models.User;
+import io.getstream.chat.android.offline.plugin.factory.StreamOfflinePluginFactory;
+import io.getstream.chat.android.state.plugin.config.StatePluginConfig;
+import io.getstream.chat.android.state.plugin.factory.StreamStatePluginFactory;
+
 public class LoginActivity extends AppCompatActivity {
     private FirebaseAuth mAuth;
     private GoogleSignInClient mGoogleSignInClient;
@@ -181,6 +188,7 @@ public class LoginActivity extends AppCompatActivity {
                                 FirebaseUser user = mAuth.getCurrentUser();
                                 if (user != null) {
                                     GoogleSignInAccount account = GoogleSignIn.getLastSignedInAccount(getApplicationContext());
+                                    createUserChat(user);
                                     Intent intent = new Intent(LoginActivity.this, MainActivity.class);
                                     startActivity(intent);
                                 }
@@ -200,6 +208,33 @@ public class LoginActivity extends AppCompatActivity {
                     }
                 });
     }
+
+    private void createUserChat(FirebaseUser userChat) {
+        StreamOfflinePluginFactory streamOfflinePluginFactory = new StreamOfflinePluginFactory(
+                getApplicationContext()
+        );
+        StreamStatePluginFactory streamStatePluginFactory = new StreamStatePluginFactory(
+                new StatePluginConfig(true, true), getApplicationContext()
+        );
+
+        // Step 2 - Set up the client for API calls with the plugin for offline storage
+        ChatClient client = new ChatClient.Builder("7r7sx9khusmb", getApplicationContext())
+                .withPlugins(streamOfflinePluginFactory, streamStatePluginFactory)
+                .logLevel(ChatLogLevel.ALL) // Set to NOTHING in prod
+                .build();
+
+        User user = new User.Builder()
+                .withId(userChat.getUid())
+                .withName(userChat.getDisplayName().toString())
+                .withImage(userChat.getPhotoUrl().toString())
+                .build();
+
+        client.connectUser(
+                user,
+                client.devToken(user.getId())
+        ).enqueue();
+    }
+
     private void updateUI(FirebaseUser currentUser) {
         if (currentUser != null) {
             startActivity(new Intent(LoginActivity.this, MainActivity.class));

@@ -3,14 +3,9 @@ package com.rasgo.compa.feature.profile;
 import static android.content.ContentValues.TAG;
 
 import static androidx.core.content.ContentProviderCompat.requireContext;
-import static com.google.android.material.internal.ContextUtils.getActivity;
-import static java.security.AccessController.getContext;
 
-import android.Manifest;
 import android.content.ContentResolver;
-import android.content.Context;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -19,25 +14,18 @@ import android.view.View;
 import android.webkit.MimeTypeMap;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
-import androidx.core.app.ActivityCompat;
 import androidx.recyclerview.widget.GridLayoutManager;
-import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
-import com.google.android.gms.auth.api.signin.GoogleSignIn;
-import com.google.android.gms.auth.api.signin.GoogleSignInClient;
-import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
@@ -56,20 +44,31 @@ import com.google.firebase.storage.StorageTask;
 import com.google.firebase.storage.UploadTask;
 import com.rasgo.compa.R;
 import com.rasgo.compa.adapters.PhotoAdapter;
-import com.rasgo.compa.feature.auth.LoginActivity;
-import com.rasgo.compa.adapters.BusinessInfoAdapter;
 
+import com.rasgo.compa.feature.auth.RegisterActivity;
+import com.rasgo.compa.feature.chat.ChatActivity;
 import com.rasgo.compa.model.user.user;
+import com.rasgo.compa.utils.GetStream;
 
-import java.text.BreakIterator;
-import java.text.StringCharacterIterator;
+import io.getstream.chat.android.client.channel.ChannelClient;
+import io.getstream.chat.android.client.errors.cause.StreamException;
+
+
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import androidx.core.content.ContextCompat;
+import io.getstream.chat.android.client.ChatClient;
+import io.getstream.chat.android.client.logger.ChatLogLevel;
+import io.getstream.chat.android.models.Channel;
+import io.getstream.chat.android.models.User;
+import io.getstream.chat.android.offline.plugin.factory.StreamOfflinePluginFactory;
+import io.getstream.chat.android.state.plugin.config.StatePluginConfig;
+import io.getstream.chat.android.state.plugin.factory.StreamStatePluginFactory;
 
 public class ProfileActivity extends AppCompatActivity {
 
@@ -304,7 +303,7 @@ public class ProfileActivity extends AppCompatActivity {
                     .addOnFailureListener(new OnFailureListener() {
                         @Override
                         public void onFailure(@NonNull Exception e) {
-                            Toast.makeText(ProfileActivity.this, "Failed to upload photo: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                            Toast.makeText(ProfileActivity.this, "Fallo al subir la foto. " + e.getMessage(), Toast.LENGTH_SHORT).show();
                         }
                     });
         }
@@ -317,13 +316,13 @@ public class ProfileActivity extends AppCompatActivity {
                     @Override
                     public void onSuccess(Void aVoid) {
                         addImage(uri);
-                        Toast.makeText(ProfileActivity.this, "Image added successfully", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(ProfileActivity.this, "Foto subida correctamente", Toast.LENGTH_SHORT).show();
                     }
                 })
                 .addOnFailureListener(new OnFailureListener() {
                     @Override
                     public void onFailure(@NonNull Exception e) {
-                        Toast.makeText(ProfileActivity.this, "Error adding image: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                        Toast.makeText(ProfileActivity.this, "Error subiendo foto" + e.getMessage(), Toast.LENGTH_SHORT).show();
                     }
                 });
     }
@@ -360,8 +359,8 @@ public class ProfileActivity extends AppCompatActivity {
                             } else {
                                 Exception e = task.getException();
                                 if (e != null) {
-                                    Toast.makeText(ProfileActivity.this, "Upload failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                                    Log.e(TAG, "Upload failed", e);
+                                    Toast.makeText(ProfileActivity.this, "Fallo en la carga. " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                                    Log.e(TAG, "Falló la carga", e);
                                 }
                             }
                         }
@@ -511,36 +510,132 @@ public class ProfileActivity extends AppCompatActivity {
                     }
                 });
     }
+    private void logStateChange(String newState) {
+        Log.d(TAG, "Changing state to: " + newState);
+    }
 
+    private void logError(String message, Exception exception) {
+        Log.e(TAG, message, exception);
+    }
     private void switcherState() {
         switch (state) {
             case STATE_LOADING:
-                // Perfil cargando
+                logStateChange("STATE_LOADING");
                 break;
             case STATE_FRIEND:
+                logStateChange("STATE_FRIEND");
                 handleFriendState();
                 break;
             case STATE_REQUEST_SENT:
+                logStateChange("STATE_REQUEST_SENT");
                 handleRequestSentState();
                 break;
             case STATE_REQUEST_RECEIVED:
+                logStateChange("STATE_REQUEST_RECEIVED");
                 handleRequestReceivedState();
                 break;
             case STATE_NOT_FRIEND:
+                logStateChange("STATE_NOT_FRIEND");
                 handleNotFriendState();
                 break;
             case STATE_MY_PROFILE:
+                logStateChange("STATE_MY_PROFILE");
                 handleMyProfileState();
                 break;
             default:
-                // Estado desconocido
+                logStateChange("UNKNOWN_STATE");
                 break;
         }
     }
 
     private void handleFriendState() {
-        profileOptionButton.setText("Amigos");
+        profileOptionButton.setText("Compa");
         profileOptionButton.setEnabled(false);
+        addPhotoButton.setImageResource(R.drawable.chat_message_48px);
+        startChat();
+    }
+
+    private void startChat() {
+        addPhotoButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if (currentUserId != null) {
+                    StreamOfflinePluginFactory streamOfflinePluginFactory = new StreamOfflinePluginFactory(
+                            getApplicationContext()
+                    );
+                    StreamStatePluginFactory streamStatePluginFactory = new StreamStatePluginFactory(
+                            new StatePluginConfig(true, true), getApplicationContext()
+                    );
+
+                    // Step 2 - Set up the client for API calls with the plugin for offline storage
+                    ChatClient client = new ChatClient.Builder("7r7sx9khusmb", getApplicationContext())
+                            .withPlugins(streamOfflinePluginFactory, streamStatePluginFactory)
+                            .logLevel(ChatLogLevel.ALL) // Set to NOTHING in prod
+                            .build();
+
+                    User user = new User.Builder()
+                            .withId(currentUser.getUid())
+                            .build();
+
+                    client.connectUser(
+                            user,
+                            client.devToken(user.getId())
+                    ).enqueue();
+
+                    ChannelClient channelClient = client.channel("messaging", "");
+
+                    Map<String, Object> extraData = new HashMap<>();
+                    List<String> memberIds = new LinkedList<>();
+                    memberIds.add(currentUser.getUid());
+                    memberIds.add(idUsuario);
+
+                    channelClient.create(memberIds, extraData)
+                            .enqueue(result -> {
+                                if (result.isSuccess()) {
+                                    Channel newChannel = result.getOrNull();
+                                    Log.d(TAG, "Channel created" + newChannel.getCid());
+                                    startActivity(ChatActivity.newIntent(getApplicationContext(), newChannel));
+                                } else {
+                                    Log.d(TAG, "Channel created" + result.errorOrNull());
+                                }
+                            });
+                }
+            }
+//            public void onClick(View view) {
+//                if (currentUserId != null) {
+//                    ChatClient client = new ChatClient.Builder("7r7sx9khusmb", getApplicationContext()).build();
+//                    User user = new User.Builder()
+//                            .withId(currentUser.getUid())
+//                            .withName(currentUser.getDisplayName().toString())
+//                            .withImage(currentUser.getPhotoUrl().toString())
+//                            .build();
+//
+//                    client.connectUser(
+//                            user,
+//                            client.devToken(user.getId())
+//                    ).enqueue(result -> {
+//                        if (result.isSuccess()) {
+//                            client.createChannel(
+//                                    new Channel().withType("messaging")
+//                                            .withMembers(Arrays.asList(user.getId(), idUsuario))
+//                            ).enqueue(channelResult -> {
+//                                if (channelResult.isSuccess()) {
+//                                    Channel channel = channelResult.data();
+//                                    startActivity(ChatActivity.newIntent(getApplicationContext(), channel.getCid()));
+//                                } else {
+//                                    // Manejar error en la creación del canal
+//                                    Log.e("ChannelCreationError", channelResult.error().getMessage());
+//                                }
+//                            });
+//                        } else {
+//                            // Manejar error en la conexión del usuario
+//                            Log.e("UserConnectionError", result.error().getMessage());
+//                        }
+//                    });
+//                }
+//            }
+        });
+
     }
 
     private void handleRequestSentState() {
@@ -606,13 +701,26 @@ public class ProfileActivity extends AppCompatActivity {
                                 handleUserProfile(document);
                             } else {
                                 handleSelectedUserProfile(document);
-                                checkFriendRequests(currentUserId, idUsuario);
+                                checkIfFriends(currentUserId, idUsuario);
                             }
                         } else {
                             Toast.makeText(ProfileActivity.this, "No se encontró documento para el usuario actual", Toast.LENGTH_SHORT).show();
                         }
                     } else {
                         Toast.makeText(ProfileActivity.this, "Error obteniendo documento", Toast.LENGTH_SHORT).show();
+                    }
+                });
+    }
+    private void checkIfFriends(String currentUserId, String idUsuario) {
+        db.collection("friends").document(currentUserId)
+                .collection("myFriends").document(idUsuario)
+                .get()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful() && task.getResult().exists()) {
+                        state = STATE_FRIEND;
+                        switcherState();
+                    } else {
+                        checkFriendRequests(currentUserId, idUsuario);
                     }
                 });
     }
@@ -694,6 +802,7 @@ public class ProfileActivity extends AppCompatActivity {
                     switcherState();
                 });
     }
+
 
 
     private void sendFriendRequest(String idUsuario) {
@@ -789,5 +898,11 @@ public class ProfileActivity extends AppCompatActivity {
                     }
                 });
     }
-
+    public void editarClick(View view) {
+        if (profileOptionButton.getText().toString().equals("Editar Perfil")) {
+            enableProfileEditing();
+        } else {
+            saveProfileEdits();
+        }
+    }
 }
