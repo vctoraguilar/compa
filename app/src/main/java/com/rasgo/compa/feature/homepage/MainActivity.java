@@ -17,12 +17,15 @@ import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentTransaction;
 
 import com.bumptech.glide.Glide;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.navigation.NavigationBarView;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.messaging.FirebaseMessaging;
 import com.rasgo.compa.R;
 import com.rasgo.compa.feature.homepage.chat.ChatFragment;
 import com.rasgo.compa.feature.homepage.feed.FeedFragment;
@@ -54,7 +57,7 @@ public class MainActivity extends AppCompatActivity {
         db = FirebaseFirestore.getInstance();
         mAuth = FirebaseAuth.getInstance();
 
-       obtenerUsuario();
+        obtenerUsuario();
 
         profileButton.setOnClickListener(new View.OnClickListener(){
             @Override
@@ -103,7 +106,7 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-    private void obtenerUsuario() {
+    public void obtenerUsuario() {
         FirebaseUser currentUser = mAuth.getCurrentUser();
         if (currentUser != null) {
             String userId = currentUser.getUid();
@@ -114,7 +117,6 @@ public class MainActivity extends AppCompatActivity {
                             DocumentSnapshot document = task.getResult();
                             if (document.exists()) {
                                 String photoUrl = document.getString("photoUrl");
-                                // Cargar la foto de perfil en el ImageButton usando Glide
                                 if (photoUrl != null) {
                                     Glide.with(MainActivity.this)
                                             .load(photoUrl)

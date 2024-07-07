@@ -20,7 +20,7 @@ package com.rasgo.compa.utils;
 //    @SuppressWarnings("unchecked")
 //    @NonNull
 //    @Override
-//    public <T extends ViewModel> T create(@NonNull Class<T> modelClass) {
+//    public <T extends ViewModel> T create(@NonNull Comp<T> modelClass) {
 //        if (modelClass.isAssignableFrom(LoginViewModel.class)){
 //            return (T) new LoginViewModel(repository);
 //        }

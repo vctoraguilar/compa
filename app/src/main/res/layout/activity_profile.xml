@@ -160,9 +160,6 @@
                     android:enabled="false"/>
             </LinearLayout>
 
-
-
-
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/recyv_profile"
                 android:layout_marginBottom="8dp"

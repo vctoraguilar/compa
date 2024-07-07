@@ -47,6 +47,7 @@ import com.rasgo.compa.adapters.PhotoAdapter;
 
 import com.rasgo.compa.feature.auth.RegisterActivity;
 import com.rasgo.compa.feature.chat.ChatActivity;
+import com.rasgo.compa.feature.homepage.MainActivity;
 import com.rasgo.compa.model.user.user;
 import com.rasgo.compa.utils.GetStream;
 
@@ -140,6 +141,9 @@ public class ProfileActivity extends AppCompatActivity {
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_profile);
 
+        progressBar=findViewById(R.id.progressbar);
+        //progressBar.setVisibility(View.VISIBLE);
+
         idUsuario = getIntent().getStringExtra("idUsuario");
         urlImagen = getIntent().getStringExtra("photoUrl");
         urlCoverAux=getIntent().getStringExtra("coverUrl");
@@ -195,9 +199,18 @@ public class ProfileActivity extends AppCompatActivity {
         recyclerView.setAdapter(photoAdapter);
 
         //Retroceder
-        setSupportActionBar(toolbar);
-        getSupportActionBar().setDisplayHomeAsUpEnabled(true); // Show the back button
-        toolbar.setNavigationOnClickListener(v -> getOnBackPressedDispatcher()); // Handle back button click
+//        setSupportActionBar(toolbar);
+//        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+//        toolbar.setNavigationOnClickListener(v -> getOnBackPressedDispatcher());
+
+//        toolbar.setNavigationIcon(R.drawable.back);
+//        toolbar.setNavigationOnClickListener(new View.OnClickListener() {
+//
+//            @Override
+//            public void onClick(View view) {
+//                getOnBackPressedDispatcher();
+//            }
+//        });
 
        //Botón Editar
         profileOptionButton = findViewById(R.id.profile_action_btn);
@@ -210,7 +223,6 @@ public class ProfileActivity extends AppCompatActivity {
 
         setSupportActionBar(toolbar);
         readProfile();
-        loadBusinessInfo();
     }
 
     private void openImageSelector() {
@@ -424,15 +436,15 @@ public class ProfileActivity extends AppCompatActivity {
                                     }
                                 });
                             } else {
-                                Toast.makeText(ProfileActivity.this, "Upload failed", Toast.LENGTH_SHORT).show();
+                                Toast.makeText(ProfileActivity.this, "Falló la carga", Toast.LENGTH_SHORT).show();
                             }
                         }
                     })
                     .addOnFailureListener(new OnFailureListener() {
                         @Override
                         public void onFailure(@NonNull Exception e) {
-                            Toast.makeText(ProfileActivity.this, "Upload failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                            Log.e(TAG, "Upload failed", e);
+                            Toast.makeText(ProfileActivity.this, "Falló la carga " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                            Log.e(TAG, "Falló la carga", e);
                         }
                     });
         } else {
@@ -463,11 +475,11 @@ public class ProfileActivity extends AppCompatActivity {
                     });
         }
     }
-    private void loadBusinessInfo() {
-        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
-        if (currentUser != null) {
-            String currentUserId = currentUser.getUid();
-            db.collection("users").document(currentUserId)
+    private void loadBusinessInfo(user usuario) {
+
+        if (usuario != null) {
+            String userId = usuario.getUserId();
+            db.collection("users").document(userId)
                     .get()
                     .addOnCompleteListener(task -> {
                         if (task.isSuccessful()) {
@@ -548,12 +560,7 @@ public class ProfileActivity extends AppCompatActivity {
         }
     }
 
-    private void handleFriendState() {
-        profileOptionButton.setText("Compa");
-        profileOptionButton.setEnabled(false);
-        addPhotoButton.setImageResource(R.drawable.chat_message_48px);
-        startChat();
-    }
+
 
     private void startChat() {
         addPhotoButton.setOnClickListener(new View.OnClickListener() {
@@ -637,23 +644,35 @@ public class ProfileActivity extends AppCompatActivity {
         });
 
     }
+    private void handleFriendState() {
+        profileOptionButton.setText("Compa");
+        profileOptionButton.setEnabled(false);
+        addPhotoButton.setVisibility(View.VISIBLE);
+        addPhotoButton.setImageResource(R.drawable.chat_message_48px);
+        startChat();
+    }
 
     private void handleRequestSentState() {
         profileOptionButton.setText("Solicitud Enviada");
         profileOptionButton.setEnabled(false);
+        addPhotoButton.setVisibility(View.GONE);
+
     }
 
     private void handleRequestReceivedState() {
         profileOptionButton.setText("Aceptar Solicitud");
         profileOptionButton.setOnClickListener(v -> acceptFriendRequest());
+        addPhotoButton.setVisibility(View.GONE);
     }
 
     private void handleNotFriendState() {
         profileOptionButton.setText("Seamos Compas");
         profileOptionButton.setOnClickListener(v -> sendFriendRequest(idUsuario));
+        addPhotoButton.setVisibility(View.GONE);
     }
 
     private void handleMyProfileState() {
+        addPhotoButton.setVisibility(View.VISIBLE);
         profileOptionButton.setOnClickListener(v -> {
             if (profileOptionButton.getText().toString().equals("Editar Perfil")) {
                 enableProfileEditing();
@@ -671,6 +690,7 @@ public class ProfileActivity extends AppCompatActivity {
         setEditTextEnabled(et_businessName, true);
         setEditTextEnabled(et_businessEmail, true);
         setEditTextEnabled(et_businessDescription, true);
+        addPhotoButton.setVisibility(View.GONE);
     }
 
     private void saveProfileEdits() {
@@ -731,6 +751,8 @@ public class ProfileActivity extends AppCompatActivity {
 
         updateProfileUI(document);
         updatePhotoUris(document);
+        loadBusinessInfo(duser);
+
     }
 
     private void handleSelectedUserProfile(DocumentSnapshot document) {
@@ -739,6 +761,8 @@ public class ProfileActivity extends AppCompatActivity {
 
         updateProfileUI(document);
         updatePhotoUris(document);
+        loadBusinessInfo(duser);
+
     }
 
     private void updateProfileUI(DocumentSnapshot document) {

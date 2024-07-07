@@ -8,6 +8,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
+import com.airbnb.lottie.LottieAnimationView;
 import com.rasgo.compa.R;
 
 /**
@@ -15,6 +16,7 @@ import com.rasgo.compa.R;
  * Use the {@link NotificationFragment#newInstance} factory method to
  * create an instance of this fragment.
  */
+
 public class NotificationFragment extends Fragment {
 
     // TODO: Rename parameter arguments, choose names that match
