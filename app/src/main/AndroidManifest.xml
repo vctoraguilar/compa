@@ -19,6 +19,14 @@
         android:theme="@style/Theme.Compa"
         tools:targetApi="31">
         <activity
+            android:name=".feature.SplashActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity
             android:name=".feature.welcome.W3Activity"
             android:exported="false" />
         <activity
@@ -39,11 +47,7 @@
         <activity
             android:name=".feature.auth.LoginActivity"
             android:exported="true">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
 
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
         </activity>
         <activity
             android:name=".feature.homepage.MainActivity"

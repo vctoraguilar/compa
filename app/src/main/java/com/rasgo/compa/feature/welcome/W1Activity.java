@@ -32,7 +32,7 @@ public class W1Activity extends AppCompatActivity {
             return insets;
 
         });
-
+        helloLottie= findViewById(R.id.hello);
         imageButton = findViewById(R.id.imageButton);
         imageButton.setOnClickListener(new View.OnClickListener(){
             @Override
