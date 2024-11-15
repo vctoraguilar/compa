@@ -1,0 +1,20 @@
+name: SonarQube Scan
+
+on:
+  push:
+    branches:
+      - main  # Cambia esto a tu rama principal
+
+jobs:
+  sonar-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: SonarQube Scan
+        uses: SonarSource/sonar-scanner-action@master
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}  # Ejemplo: https://sonarcloud.io
+          SONAR_PROJECT_KEY: ${{ secrets.SONAR_PROJECT_KEY }}  # Clave de tu proyecto en SonarQube
