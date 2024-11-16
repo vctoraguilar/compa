@@ -28,7 +28,6 @@ public class BusinessInfoAdapter extends RecyclerView.Adapter<BusinessInfoAdapte
     }
 
     public BusinessInfoAdapter(ProfileActivity profileActivity, List<String> businessInfoList) {
-        // Probando el método 
     }
 
 
