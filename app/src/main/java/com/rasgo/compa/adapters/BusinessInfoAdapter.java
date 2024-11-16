@@ -27,8 +27,8 @@ public class BusinessInfoAdapter extends RecyclerView.Adapter<BusinessInfoAdapte
         this.businessDescription = businessDescription;
     }
 
-    public BusinessInfoAdapter(ProfileActivity profileActivity, List<String> businessInfoList) {
-    }
+//    public BusinessInfoAdapter(ProfileActivity profileActivity, List<String> businessInfoList) {
+//    }
 
 
     public void setBusinessInfo(String businessName, String businessDescription) {
