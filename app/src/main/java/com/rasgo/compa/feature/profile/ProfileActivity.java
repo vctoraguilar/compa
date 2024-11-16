@@ -79,14 +79,13 @@ public class ProfileActivity extends AppCompatActivity {
     private static final int STATE_REQUEST_RECEIVED = 3;
     private static final int STATE_NOT_FRIEND = 4;
     private static final int STATE_MY_PROFILE = 5;
+
     // Imagenes
     private static final int REQUEST_IMAGE_PICKER_PROFILE = 100;
     private static final int REQUEST_IMAGE_PICKER_COVER = 101;
     private static final int SELECT_IMAGE_REQUEST = 105;
-
     private static final int STORAGE_PERMISSION_CODE=102;
-
-    private String uid="",profileUrl="", coverUrl="";
+    private String uid="", profileUrl="", coverUrl="";
     private int current_state=0;
     private static final int IMAGE_REQUEST=1;
 
@@ -141,46 +140,52 @@ public class ProfileActivity extends AppCompatActivity {
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_profile);
 
-        progressBar=findViewById(R.id.progressbar);
-        //progressBar.setVisibility(View.VISIBLE);
+        progressBar = findViewById(R.id.progressbar);
+        profileOptionButton = findViewById(R.id.profile_action_btn); // Asegúrate de que esto está antes de usar el botón
+        addPhotoButton = findViewById(R.id.add_photoButton);
+        addPhotoButton.setVisibility(View.GONE);
 
         idUsuario = getIntent().getStringExtra("idUsuario");
         urlImagen = getIntent().getStringExtra("photoUrl");
-        urlCoverAux=getIntent().getStringExtra("coverUrl");
+        urlCoverAux = getIntent().getStringExtra("coverUrl");
         nombreUsuario = getIntent().getStringExtra("name");
         fuser = FirebaseAuth.getInstance().getCurrentUser();
         profileImage = findViewById(R.id.profile_image);
         coverImage = findViewById(R.id.profile_cover);
 
-        addPhotoButton = findViewById(R.id.add_photoButton);
-        addPhotoButton.setOnClickListener(new View.OnClickListener(){
+        // Oculta los elementos hasta que los datos se carguen
+        progressBar.setVisibility(View.VISIBLE);
+        profileOptionButton.setVisibility(View.GONE);
+        findViewById(R.id.appbar).setVisibility(View.GONE);
+        findViewById(R.id.nested_scroll_view).setVisibility(View.GONE);
+
+        addPhotoButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 openImageSelector();
             }
         });
 
-        et_businessName=findViewById(R.id.et_business_name);
-        et_businessEmail=findViewById(R.id.et_business_email);
-        et_businessDescription=findViewById(R.id.et_business_description);
-
-        coverImage.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (profileOptionSelect==true){
-                    openCoverGallery();
-                }
-
-            }
-        });
+        et_businessName = findViewById(R.id.et_business_name);
+        et_businessEmail = findViewById(R.id.et_business_email);
+        et_businessDescription = findViewById(R.id.et_business_description);
 
         reference = FirebaseFirestore.getInstance().collection("users").document(fuser.getUid());
         storageReference = FirebaseStorage.getInstance().getReference("uploads");
 
+        coverImage.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (profileOptionSelect) {
+                    openCoverGallery();
+                }
+            }
+        });
+
         profileImage.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (profileOptionSelect==true) {
+                if (profileOptionSelect) {
                     openGallery();
                 }
             }
@@ -188,7 +193,6 @@ public class ProfileActivity extends AppCompatActivity {
 
         toolbar = findViewById(R.id.toolbar_bar);
 
-        profileOptionButton = findViewById(R.id.profile_action_btn);
         collapsingToolbarLayout = findViewById(R.id.collapsing_toolbar);
 
         recyclerView = findViewById(R.id.recyv_profile);
@@ -199,23 +203,21 @@ public class ProfileActivity extends AppCompatActivity {
         recyclerView.setAdapter(photoAdapter);
 
         //Retroceder
-//        setSupportActionBar(toolbar);
-//        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-//        toolbar.setNavigationOnClickListener(v -> getOnBackPressedDispatcher());
+        //setSupportActionBar(toolbar);
+        //getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        //toolbar.setNavigationOnClickListener(v -> getOnBackPressedDispatcher());
 
-//        toolbar.setNavigationIcon(R.drawable.back);
-//        toolbar.setNavigationOnClickListener(new View.OnClickListener() {
-//
-//            @Override
-//            public void onClick(View view) {
-//                getOnBackPressedDispatcher();
-//            }
-//        });
+        //toolbar.setNavigationIcon(R.drawable.back);
+        //toolbar.setNavigationOnClickListener(new View.OnClickListener() {
+        //    @Override
+        //    public void onClick(View view) {
+        //        getOnBackPressedDispatcher();
+        //    }
+        //});
 
-       //Botón Editar
-        profileOptionButton = findViewById(R.id.profile_action_btn);
-        editProfile= findViewById(R.id.profile_imageEdit);
-        editCover= findViewById(R.id.profile_coverEdit);
+        //Botón Editar
+        editProfile = findViewById(R.id.profile_imageEdit);
+        editCover = findViewById(R.id.profile_coverEdit);
 
         setEditTextEnabled(et_businessName, false);
         setEditTextEnabled(et_businessEmail, false);
@@ -230,6 +232,7 @@ public class ProfileActivity extends AppCompatActivity {
         intent.setType("image/*");
         startActivityForResult(intent, SELECT_IMAGE_REQUEST);
     }
+
     private void setEditTextEnabled(EditText editText, boolean enabled) {
         editText.setEnabled(enabled);
 
@@ -245,11 +248,11 @@ public class ProfileActivity extends AppCompatActivity {
             editText.setBackgroundColor(getResources().getColor(android.R.color.transparent));
         }
     }
+
     private void addImage(Uri uri) {
         photoUris.add(uri);
         photoAdapter.notifyItemInserted(photoUris.size() - 1);
     }
-
 
     private void openCoverGallery() {
         Intent intent = new Intent();
@@ -264,6 +267,7 @@ public class ProfileActivity extends AppCompatActivity {
         intent.setAction(Intent.ACTION_GET_CONTENT);
         startActivityForResult(intent, IMAGE_REQUEST);
     }
+
     private String getFileExtension(Uri uri) {
         ContentResolver contentResolver = getContentResolver();
         MimeTypeMap mimeTypeMap = MimeTypeMap.getSingleton();
@@ -296,6 +300,7 @@ public class ProfileActivity extends AppCompatActivity {
             }
         }
     }
+
     private void uploadPhoto(Uri imageUri) {
         if (imageUri != null) {
             StorageReference fileReference = storageReference.child("user_photos/" + currentUser.getUid() + "/" + UUID.randomUUID().toString() + ".jpg");
@@ -451,6 +456,7 @@ public class ProfileActivity extends AppCompatActivity {
             Toast.makeText(ProfileActivity.this, "Ningún archivo seleccionado", Toast.LENGTH_SHORT).show();
         }
     }
+
     private void saveBusinessInfo() {
         EditText etBusinessName = findViewById(R.id.et_business_name);
         EditText etBusinessDescription = findViewById(R.id.et_business_description);
@@ -475,8 +481,8 @@ public class ProfileActivity extends AppCompatActivity {
                     });
         }
     }
-    private void loadBusinessInfo(user usuario) {
 
+    private void loadBusinessInfo(user usuario) {
         if (usuario != null) {
             String userId = usuario.getUserId();
             db.collection("users").document(userId)
@@ -522,6 +528,7 @@ public class ProfileActivity extends AppCompatActivity {
                     }
                 });
     }
+
     private void logStateChange(String newState) {
         Log.d(TAG, "Changing state to: " + newState);
     }
@@ -529,6 +536,7 @@ public class ProfileActivity extends AppCompatActivity {
     private void logError(String message, Exception exception) {
         Log.e(TAG, message, exception);
     }
+
     private void switcherState() {
         switch (state) {
             case STATE_LOADING:
@@ -559,8 +567,6 @@ public class ProfileActivity extends AppCompatActivity {
                 break;
         }
     }
-
-
 
     private void startChat() {
         addPhotoButton.setOnClickListener(new View.OnClickListener() {
@@ -608,42 +614,9 @@ public class ProfileActivity extends AppCompatActivity {
                             });
                 }
             }
-//            public void onClick(View view) {
-//                if (currentUserId != null) {
-//                    ChatClient client = new ChatClient.Builder("7r7sx9khusmb", getApplicationContext()).build();
-//                    User user = new User.Builder()
-//                            .withId(currentUser.getUid())
-//                            .withName(currentUser.getDisplayName().toString())
-//                            .withImage(currentUser.getPhotoUrl().toString())
-//                            .build();
-//
-//                    client.connectUser(
-//                            user,
-//                            client.devToken(user.getId())
-//                    ).enqueue(result -> {
-//                        if (result.isSuccess()) {
-//                            client.createChannel(
-//                                    new Channel().withType("messaging")
-//                                            .withMembers(Arrays.asList(user.getId(), idUsuario))
-//                            ).enqueue(channelResult -> {
-//                                if (channelResult.isSuccess()) {
-//                                    Channel channel = channelResult.data();
-//                                    startActivity(ChatActivity.newIntent(getApplicationContext(), channel.getCid()));
-//                                } else {
-//                                    // Manejar error en la creación del canal
-//                                    Log.e("ChannelCreationError", channelResult.error().getMessage());
-//                                }
-//                            });
-//                        } else {
-//                            // Manejar error en la conexión del usuario
-//                            Log.e("UserConnectionError", result.error().getMessage());
-//                        }
-//                    });
-//                }
-//            }
         });
-
     }
+
     private void handleFriendState() {
         profileOptionButton.setText("Compa");
         profileOptionButton.setEnabled(false);
@@ -656,7 +629,6 @@ public class ProfileActivity extends AppCompatActivity {
         profileOptionButton.setText("Solicitud Enviada");
         profileOptionButton.setEnabled(false);
         addPhotoButton.setVisibility(View.GONE);
-
     }
 
     private void handleRequestReceivedState() {
@@ -672,6 +644,7 @@ public class ProfileActivity extends AppCompatActivity {
     }
 
     private void handleMyProfileState() {
+        profileOptionButton.setText("Editar Perfil");
         addPhotoButton.setVisibility(View.VISIBLE);
         profileOptionButton.setOnClickListener(v -> {
             if (profileOptionButton.getText().toString().equals("Editar Perfil")) {
@@ -723,6 +696,12 @@ public class ProfileActivity extends AppCompatActivity {
                                 handleSelectedUserProfile(document);
                                 checkIfFriends(currentUserId, idUsuario);
                             }
+                            // Ocultar el ProgressBar y mostrar los elementos cargados
+                            progressBar.setVisibility(View.GONE);
+                            findViewById(R.id.appbar).setVisibility(View.VISIBLE);
+                            findViewById(R.id.nested_scroll_view).setVisibility(View.VISIBLE);
+                            profileOptionButton.setVisibility(View.VISIBLE);
+                            switcherState();
                         } else {
                             Toast.makeText(ProfileActivity.this, "No se encontró documento para el usuario actual", Toast.LENGTH_SHORT).show();
                         }
@@ -731,6 +710,7 @@ public class ProfileActivity extends AppCompatActivity {
                     }
                 });
     }
+
     private void checkIfFriends(String currentUserId, String idUsuario) {
         db.collection("friends").document(currentUserId)
                 .collection("myFriends").document(idUsuario)
@@ -752,7 +732,6 @@ public class ProfileActivity extends AppCompatActivity {
         updateProfileUI(document);
         updatePhotoUris(document);
         loadBusinessInfo(duser);
-
     }
 
     private void handleSelectedUserProfile(DocumentSnapshot document) {
@@ -762,7 +741,6 @@ public class ProfileActivity extends AppCompatActivity {
         updateProfileUI(document);
         updatePhotoUris(document);
         loadBusinessInfo(duser);
-
     }
 
     private void updateProfileUI(DocumentSnapshot document) {
@@ -826,8 +804,6 @@ public class ProfileActivity extends AppCompatActivity {
                     switcherState();
                 });
     }
-
-
 
     private void sendFriendRequest(String idUsuario) {
         Map<String, Object> friendRequest = new HashMap<>();
@@ -922,6 +898,7 @@ public class ProfileActivity extends AppCompatActivity {
                     }
                 });
     }
+
     public void editarClick(View view) {
         if (profileOptionButton.getText().toString().equals("Editar Perfil")) {
             enableProfileEditing();

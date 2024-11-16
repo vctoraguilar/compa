@@ -5,7 +5,8 @@
     android:id="@+id/register"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".feature.chat.ChatActivity">
+    tools:context=".feature.chat.ChatActivity"
+    android:background="@color/white">
 
     <io.getstream.chat.android.ui.feature.messages.header.MessageListHeaderView
         android:id="@+id/messageListHeaderView"

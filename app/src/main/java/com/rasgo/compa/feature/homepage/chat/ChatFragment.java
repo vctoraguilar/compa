@@ -5,6 +5,7 @@ import static java.util.Collections.singletonList;
 import android.os.Bundle;
 
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AppCompatDelegate;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
@@ -102,6 +103,7 @@ public class ChatFragment extends Fragment {
                     channel -> startActivity(ChatActivity.newIntent(requireContext(), channel))
             );
         });
+
     }
 
     @Override

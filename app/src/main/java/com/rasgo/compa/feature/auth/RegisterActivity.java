@@ -41,164 +41,191 @@ import io.getstream.chat.android.state.plugin.factory.StreamStatePluginFactory;
 
 public class RegisterActivity extends AppCompatActivity {
 
-    public EditText Name;
-    public EditText Email;
-    public EditText Password;
-    public FirebaseAuth mAuth;
+    // Variables globales para la interfaz de usuario
+    private EditText nameEditText, emailEditText, passwordEditText;
+    private Button registerButton;
+    private CheckBox termsCheckBox;
+    private TextView termsTextView;
+    private FirebaseAuth mAuth;
+
     private static final String TAG = "RegisterActivity";
-
-    private Button btnRegister;
-    private CheckBox checkTerms;
-
-    private TextView terms;
+    private static final String TERMS_URL = "https://www.compa.pe/terminos";
+    private static final int DRAWABLE_END = 2; // Índice del drawableEnd
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        EdgeToEdge.enable(this);
+        setupUI();
+        setupAuth();
+        setupListeners();
+    }
+
+    // Método para inicializar la interfaz de usuario
+    private void setupUI() {
         setContentView(R.layout.activity_register);
+        EdgeToEdge.enable(this);
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.register), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
 
-        btnRegister = findViewById(R.id.btnRegister);
-        checkTerms = findViewById(R.id.checkTerms);
-        btnRegister.setEnabled(false);
+        // Inicialización de vistas
+        nameEditText = findViewById(R.id.et_name);
+        emailEditText = findViewById(R.id.et_email);
+        passwordEditText = findViewById(R.id.et_password);
+        registerButton = findViewById(R.id.btnRegister);
+        termsCheckBox = findViewById(R.id.checkTerms);
+        termsTextView = findViewById(R.id.termsText);
 
+        // Deshabilitar botón de registro inicialmente
+        registerButton.setEnabled(false);
+    }
+
+    // Método para inicializar FirebaseAuth
+    private void setupAuth() {
         mAuth = FirebaseAuth.getInstance();
+    }
 
-        checkTerms.setOnCheckedChangeListener((buttonView, isChecked) -> {
-            btnRegister.setEnabled(isChecked);
-        });
+    // Método para configurar los listeners
+    private void setupListeners() {
+        // Listener para habilitar el botón de registro cuando los términos son aceptados
+        termsCheckBox.setOnCheckedChangeListener((buttonView, isChecked) ->
+                registerButton.setEnabled(isChecked)
+        );
 
-        Name = findViewById(R.id.et_name);
-        Email = findViewById(R.id.et_email);
-        Password = findViewById(R.id.et_password);
+        // Listener para mostrar los términos de servicio
+        termsTextView.setOnClickListener(v -> openTermsPage());
 
-        terms=findViewById(R.id.termsText);
-        terms.setOnClickListener(new View.OnClickListener() {
+        // Listener para el botón de registro
+        registerButton.setOnClickListener(v -> attemptRegister());
 
-            @Override
-            public void onClick(View view) {
-                String url = "https://www.compa.pe/terminos";
-                Intent intent = new Intent(Intent.ACTION_VIEW);
-                intent.setData(Uri.parse(url));
-                startActivity(intent);
-            }
-        });
-
-        Button btnRegister = findViewById(R.id.btnRegister);
-        btnRegister.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                String emailUser = Email.getText().toString().trim();
-                String passwordUser = Password.getText().toString().trim();
-                String nameUser = Name.getText().toString().trim();
-
-                if (emailUser.isEmpty() || passwordUser.isEmpty() || nameUser.isEmpty()) {
-                    Toast.makeText(RegisterActivity.this, "Todos los campos son obligatorios", Toast.LENGTH_SHORT).show();
-                    return;
-                }
-
-                register(emailUser, passwordUser, nameUser);
-            }
-        });
+        // Listener para cambiar la visibilidad de la contraseña
         setupPasswordVisibilityToggle();
     }
 
-    private void setupPasswordVisibilityToggle() {
-        Password.setOnTouchListener(new View.OnTouchListener() {
-            @Override
-            public boolean onTouch(View v, MotionEvent event) {
-                final int drawableEnd = 2; // Index of the drawableEnd in the compound drawables array
-                if (event.getAction() == MotionEvent.ACTION_UP) {
-                    if (event.getRawX() >= (Password.getRight() - Password.getCompoundDrawables()[drawableEnd].getBounds().width())) {
-                        if (Password.getInputType() == (InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD)) {
-                            Password.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
-                            Password.setCompoundDrawablesWithIntrinsicBounds(R.drawable.lock_24px, 0, R.drawable.hide_24px, 0);
-                        } else {
-                            Password.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD);
-                            Password.setCompoundDrawablesWithIntrinsicBounds(R.drawable.lock_24px, 0, R.drawable.eye_24px, 0);
-                        }
-                        Password.setSelection(Password.getText().length()); // Place cursor at the end of text
-                        return true;
-                    }
-                }
-                return false;
-            }
-        });
+    // Abre la página de términos de servicio en el navegador
+    private void openTermsPage() {
+        Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(TERMS_URL));
+        startActivity(intent);
     }
 
+    // Intenta registrar al usuario
+    private void attemptRegister() {
+        String email = emailEditText.getText().toString().trim();
+        String password = passwordEditText.getText().toString().trim();
+        String name = nameEditText.getText().toString().trim();
+
+        // Validación de campos
+        if (isEmptyField(email, password, name)) {
+            showToast("Todos los campos son obligatorios");
+            return;
+        }
+
+        // Registro de usuario
+        register(email, password, name);
+    }
+
+    // Valida si alguno de los campos está vacío
+    private boolean isEmptyField(String email, String password, String name) {
+        return email.isEmpty() || password.isEmpty() || name.isEmpty();
+    }
+
+    // Método para mostrar un Toast de manera simplificada
+    private void showToast(String message) {
+        Toast.makeText(RegisterActivity.this, message, Toast.LENGTH_SHORT).show();
+    }
+
+    // Registra al usuario en FirebaseAuth y FirebaseFirestore
     private void register(String email, String password, String name) {
         mAuth.createUserWithEmailAndPassword(email, password)
-                .addOnCompleteListener(new OnCompleteListener<AuthResult>() {
-                    @Override
-                    public void onComplete(@NonNull Task<AuthResult> task) {
-                        if (task.isSuccessful()) {
-                            String userid = task.getResult().getUser().getUid();
-
-                            FirebaseFirestore db = FirebaseFirestore.getInstance();
-                            user usuario = new user();
-                            usuario.setUserId(userid);
-                            usuario.setDisplayName(name);
-                            usuario.setEmail(email);
-                            String defaultPhotoUrl = getUriFromDrawable(R.drawable.male_user_96px);
-                            usuario.setPhotoUrl(defaultPhotoUrl);
-
-                            db.collection("users").document(userid).set(usuario)
-                                    .addOnCompleteListener(new OnCompleteListener<Void>() {
-                                        @Override
-                                        public void onComplete(@NonNull Task<Void> task) {
-                                            if (task.isSuccessful()) {
-                                                Intent intent = new Intent(RegisterActivity.this, W1Activity.class);
-                                                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
-                                                createUserChat(usuario);
-                                                startActivity(intent);
-                                                finish();
-                                            } else {
-                                                Toast.makeText(RegisterActivity.this, "Error al registrar en Firestore: " + task.getException().getMessage(), Toast.LENGTH_SHORT).show();
-                                            }
-                                        }
-                                    });
-                        } else {
-                            Log.e(TAG, "Error al registrar: ", task.getException());
-                            Toast.makeText(RegisterActivity.this, "Error al registrar: " + task.getException().getMessage(), Toast.LENGTH_SHORT).show();
-                        }
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        String userId = task.getResult().getUser().getUid();
+                        createUserInFirestore(userId, email, name);
+                    } else {
+                        handleRegisterError(task.getException());
                     }
                 });
     }
 
-    private void createUserChat(user usuario) {
-        StreamOfflinePluginFactory streamOfflinePluginFactory = new StreamOfflinePluginFactory(
-                getApplicationContext()
-        );
-        StreamStatePluginFactory streamStatePluginFactory = new StreamStatePluginFactory(
-                new StatePluginConfig(true, true), getApplicationContext()
-        );
+    // Crea un nuevo usuario en Firestore
+    private void createUserInFirestore(String userId, String email, String name) {
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        User usuario = new User();
 
-        // Step 2 - Set up the client for API calls with the plugin for offline storage
+        db.collection("users").document(userId).set(usuario)
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        navigateToNextActivity(usuario);
+                    } else {
+                        showToast("Error al registrar en Firestore: " + task.getException().getMessage());
+                    }
+                });
+    }
+
+    // Maneja los errores de registro
+    private void handleRegisterError(Exception exception) {
+        Log.e(TAG, "Error al registrar: ", exception);
+        showToast("Error al registrar: " + exception.getMessage());
+    }
+
+    // Navega a la siguiente actividad después del registro exitoso
+    private void navigateToNextActivity(User usuario) {
+        createUserChat(usuario);
+        Intent intent = new Intent(RegisterActivity.this, W1Activity.class);
+        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
+        startActivity(intent);
+        finish();
+    }
+
+    // Crea un chat para el usuario utilizando Stream
+    private void createUserChat(User usuario) {
         ChatClient client = new ChatClient.Builder("7r7sx9khusmb", getApplicationContext())
-                .withPlugins(streamOfflinePluginFactory, streamStatePluginFactory)
-                .logLevel(ChatLogLevel.ALL) // Set to NOTHING in prod
+                .withPlugins(new StreamOfflinePluginFactory(getApplicationContext()),
+                        new StreamStatePluginFactory(new StatePluginConfig(true, true), getApplicationContext()))
+                .logLevel(ChatLogLevel.ALL) // Establecer en NOTHING en producción
                 .build();
 
-        User user = new User.Builder()
-                .withId(usuario.getUserId())
-                .withName(usuario.getDisplayName().toString())
-                .withImage(usuario.getPhotoUrl().toString())
+        User chatUser = new User.Builder()
+                .withId(usuario.getId())
+                .withName(usuario.getName())
+                .withImage(usuario.getImage())
                 .build();
 
-        client.connectUser(
-                user,
-                client.devToken(user.getId())
-        ).enqueue();
+        client.connectUser(chatUser, client.devToken(chatUser.getId())).enqueue();
     }
 
-    private String getUriFromDrawable(int drawableId) {
-        return Uri.parse("android.resource://" + getPackageName() + "/" + drawableId).toString();
+    // Método para obtener la URL del drawable
+    private String getDefaultPhotoUrl() {
+        return Uri.parse("android.resource://" + getPackageName() + "/" + R.drawable.male_user_96px).toString();
     }
+
+    // Método para configurar el toggle de visibilidad de la contraseña
+    private void setupPasswordVisibilityToggle() {
+        passwordEditText.setOnTouchListener((v, event) -> {
+            if (event.getAction() == MotionEvent.ACTION_UP &&
+                    event.getRawX() >= (passwordEditText.getRight() - passwordEditText.getCompoundDrawables()[DRAWABLE_END].getBounds().width())) {
+                togglePasswordVisibility();
+                return true;
+            }
+            return false;
+        });
+    }
+
+    // Alterna la visibilidad de la contraseña
+    private void togglePasswordVisibility() {
+        if (passwordEditText.getInputType() == (InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD)) {
+            passwordEditText.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
+            passwordEditText.setCompoundDrawablesWithIntrinsicBounds(R.drawable.lock_24px, 0, R.drawable.hide_24px, 0);
+        } else {
+            passwordEditText.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD);
+            passwordEditText.setCompoundDrawablesWithIntrinsicBounds(R.drawable.lock_24px, 0, R.drawable.eye_24px, 0);
+        }
+        passwordEditText.setSelection(passwordEditText.getText().length());
+    }
+
+    // Navega a la pantalla de inicio de sesión
     public void onLoginClick(View view) {
         startActivity(new Intent(this, LoginActivity.class));
         overridePendingTransition(R.anim.slide_in_left, R.anim.stay);

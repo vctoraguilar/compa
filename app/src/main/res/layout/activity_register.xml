@@ -4,11 +4,13 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/register"
-    android:layout_width="360dp"
+    android:layout_width="match_parent"
     android:layout_gravity="center"
     android:layout_height="match_parent"
     android:padding="26dp"
-    tools:context=".feature.auth.RegisterActivity">
+
+    tools:context=".feature.auth.RegisterActivity"
+    android:background="@color/white">
 
     <ImageView
         android:id="@+id/backButton"
@@ -49,7 +51,9 @@
         android:padding="12dp"
         app:layout_constraintTop_toBottomOf="@id/textIniciar"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"/>
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginRight="26dp"
+        android:layout_marginLeft="26dp"/>
 
     <EditText
         android:id="@+id/et_email"
@@ -64,7 +68,9 @@
         android:padding="12dp"
         app:layout_constraintTop_toBottomOf="@id/et_name"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"/>
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginRight="26dp"
+        android:layout_marginLeft="26dp"/>
 
     <EditText
         android:id="@+id/et_password"
@@ -80,7 +86,9 @@
         android:fontFamily="@font/fredoka_medium"
         app:layout_constraintTop_toBottomOf="@id/et_email"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"/>
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginRight="26dp"
+        android:layout_marginLeft="26dp"/>
 
     <LinearLayout
         android:id="@+id/termsLayout"
@@ -89,7 +97,9 @@
         android:orientation="horizontal"
         app:layout_constraintTop_toBottomOf="@id/et_password"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginRight="26dp"
+        android:layout_marginLeft="26dp">
 
         <CheckBox
             android:id="@+id/checkTerms"
@@ -119,11 +129,14 @@
         android:layout_height="60dp"
         android:layout_marginTop="24dp"
         android:fontFamily="@font/fredoka_bold"
+        android:textColor="@color/white"
         android:onClick="menuprincipal"
         android:text="Regístrate"
         android:textSize="24sp"
         app:layout_constraintTop_toBottomOf="@id/termsLayout"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        tools:ignore="OnClick" />
+        tools:ignore="OnClick"
+        android:layout_marginRight="26dp"
+        android:layout_marginLeft="26dp"/>
 </androidx.constraintlayout.widget.ConstraintLayout>

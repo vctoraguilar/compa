@@ -59,12 +59,15 @@ import io.getstream.chat.android.state.plugin.config.StatePluginConfig;
 import io.getstream.chat.android.state.plugin.factory.StreamStatePluginFactory;
 
 public class LoginActivity extends AppCompatActivity {
+
+    // Variables globales para la autenticación y Google Sign-In
     private FirebaseAuth mAuth;
     private GoogleSignInClient mGoogleSignInClient;
-    private int RC_SIGN_IN=50;
-    private static final String TAG="LoginActivity";
+    private static final int RC_SIGN_IN = 50;
+    private static final String TAG = "LoginActivity";
+
+    // Elementos de la interfaz de usuario
     private SignInButton signInButton;
-    //private LoginViewModel viewModel;
     private ProgressDialog progressDialog;
     private FirebaseFirestore db;
 
@@ -73,174 +76,174 @@ public class LoginActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
 
+        initializeUI();
+        configureGoogleSignIn();
+        checkCurrentUser();
+    }
+
+    // Inicializa la interfaz de usuario y configura el progreso
+    private void initializeUI() {
         db = FirebaseFirestore.getInstance();
-        progressDialog = new ProgressDialog(LoginActivity.this);
+        progressDialog = new ProgressDialog(this);
         progressDialog.setCancelable(false);
-        progressDialog.setTitle("Cargando ...");
-        progressDialog.setMessage("Iniciando Sesíón ...  ");
-        //viewModel= new ViewModelProvider(this, new ViewModelFactory()).get(LoginViewModel.class);
-        signInButton=findViewById(R.id.btn_GoogleInicio);
+        progressDialog.setTitle("Cargando...");
+        progressDialog.setMessage("Iniciando Sesión...");
+
+        signInButton = findViewById(R.id.btn_GoogleInicio);
         signInButton.setSize(SignInButton.SIZE_ICON_ONLY);
 
-        //Configurando Google Sign In
+        // Listener para el botón de Google Sign-In
+        signInButton.setOnClickListener(v -> signIn());
+
+        EditText emailEditText = findViewById(R.id.et_username);
+        EditText passwordEditText = findViewById(R.id.et_password);
+        Button loginButton = findViewById(R.id.btnLogIn);
+
+        // Listener para el botón de inicio de sesión con correo y contraseña
+        loginButton.setOnClickListener(v -> attemptEmailLogin(emailEditText, passwordEditText));
+    }
+
+    // Configura las opciones de Google Sign-In
+    private void configureGoogleSignIn() {
         GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
                 .requestIdToken(getString(R.string.default_web_client_id))
                 .requestEmail()
                 .build();
+        mGoogleSignInClient = GoogleSignIn.getClient(this, gso);
 
         mAuth = FirebaseAuth.getInstance();
-        mGoogleSignInClient= GoogleSignIn.getClient(this, gso);
-
-        signInButton.setOnClickListener(new View.OnClickListener(){
-            @Override
-            public void onClick(View v){
-                signIn();
-            }
-        });
-
-        //Login correo password
-        FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
-
-        if (firebaseUser != null){
-            Intent intent = new Intent(this, MainActivity.class);
-            startActivity(intent);
-            finish();
-        }
-        EditText etEmail = findViewById(R.id.et_username);
-        EditText etPassword = findViewById(R.id.et_password);
-        Button btnLogin = findViewById(R.id.btnLogIn);
-
-        btnLogin.setOnClickListener(v-> {
-            String txtEmail=etEmail.getText().toString();
-            String txtPassword = etPassword.getText().toString();
-            if (TextUtils.isEmpty(txtEmail) || TextUtils.isEmpty(txtPassword)) {
-                Toast.makeText(LoginActivity.this, "Faltan campos", Toast.LENGTH_SHORT).show();
-            } else {
-                mAuth.signInWithEmailAndPassword(txtEmail, txtPassword)
-                        .addOnCompleteListener(task -> {
-                            if (task.isSuccessful()) {
-                                // You can add Firestore specific logic here if needed
-                                Intent intent = new Intent(LoginActivity.this, MainActivity.class);
-                                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
-                                startActivity(intent);
-                                finish();
-                            } else {
-                                Toast.makeText(LoginActivity.this, "Error al autentificar", Toast.LENGTH_SHORT).show();
-                            }
-                        });
-            }
-        });
     }
-    @Override
-    public void onStart() {
-        super.onStart();
+
+    // Verifica si ya existe un usuario autenticado
+    private void checkCurrentUser() {
         FirebaseUser currentUser = mAuth.getCurrentUser();
-        updateUI(currentUser);
-    }
-
-    private void signIn() {
-        Intent signInIntent = mGoogleSignInClient.getSignInIntent();
-        startActivityForResult(signInIntent, RC_SIGN_IN);
-    }
-    public void onLoginClick(View view) {
-        startActivity(new Intent(this, RegisterActivity.class));
-        overridePendingTransition(R.anim.slide_in_right, android.R.anim.slide_out_right);
-    }
-
-    @Override
-    public void onActivityResult(int requestCode, int resultCode, Intent data){
-        super.onActivityResult(requestCode, resultCode, data);
-
-        if (requestCode == RC_SIGN_IN){
-            Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(data);
-            try {
-                GoogleSignInAccount account = task.getResult(ApiException.class);
-                Log.d(TAG, "firebaseAuthWithGoogle: " + account.getId());
-                firebaseAuthWithGoogle(account.getIdToken());
-            } catch (ApiException e) {
-                Log.w(TAG, "Google sign in failed: " + e.getStatusCode(), e);
-            }
+        if (currentUser != null) {
+            updateUI(currentUser);
         }
     }
 
-    private void handleSignInResult(Task<GoogleSignInAccount> completedTask) {
-        try {
-            GoogleSignInAccount account = completedTask.getResult(ApiException.class);
+    // Intenta iniciar sesión con correo y contraseña
+    private void attemptEmailLogin(EditText emailEditText, EditText passwordEditText) {
+        String email = emailEditText.getText().toString().trim();
+        String password = passwordEditText.getText().toString().trim();
 
-            // Autenticar con Firebase usando el token de ID de Google
-            firebaseAuthWithGoogle(account.getIdToken());
-        } catch (ApiException e) {
-            Log.w(TAG, "signInResult:failed code=" + e.getStatusCode());
+        if (isEmptyField(email, password)) {
+            showToast("Faltan campos");
+            return;
         }
-    }
 
-    private void firebaseAuthWithGoogle(String idToken){
         progressDialog.show();
-        signInButton.setVisibility(View.GONE);
-        AuthCredential credential = GoogleAuthProvider.getCredential(idToken,null);
-        mAuth.signInWithCredential(credential)
-                .addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
-                    @Override
-                    public void onComplete(@NonNull Task<AuthResult> task) {
-                        if (task.isSuccessful()){
-                            Log.d(TAG, "signInWithCredential:success");
-                            FirebaseMessaging.getInstance().getToken().addOnSuccessListener(token -> {
-                                FirebaseUser user = mAuth.getCurrentUser();
-                                if (user != null) {
-                                    GoogleSignInAccount account = GoogleSignIn.getLastSignedInAccount(getApplicationContext());
-                                    createUserChat(user);
-                                    Intent intent = new Intent(LoginActivity.this, MainActivity.class);
-                                    startActivity(intent);
-                                }
-                            }).addOnFailureListener(e -> {
-                                Log.e(TAG, "Failed to get FCM token", e);
-                                progressDialog.hide();
-                                signInButton.setVisibility(View.VISIBLE);
-                                Toast.makeText(LoginActivity.this, "Failed to get FCM token", Toast.LENGTH_SHORT).show();
-                            });
-
-                        }else {
-                            Log.w(TAG,"signInWithCredential:failure", task.getException());
-                            progressDialog.hide();
-                            signInButton.setVisibility(View.VISIBLE);
-                            updateUI(null);
-                        }
+        mAuth.signInWithEmailAndPassword(email, password)
+                .addOnCompleteListener(task -> {
+                    progressDialog.dismiss();
+                    if (task.isSuccessful()) {
+                        navigateToMainActivity();
+                    } else {
+                        showToast("Error al autenticar");
                     }
                 });
     }
 
-    private void createUserChat(FirebaseUser userChat) {
-        StreamOfflinePluginFactory streamOfflinePluginFactory = new StreamOfflinePluginFactory(
-                getApplicationContext()
-        );
-        StreamStatePluginFactory streamStatePluginFactory = new StreamStatePluginFactory(
-                new StatePluginConfig(true, true), getApplicationContext()
-        );
+    // Verifica si los campos de email o contraseña están vacíos
+    private boolean isEmptyField(String email, String password) {
+        return TextUtils.isEmpty(email) || TextUtils.isEmpty(password);
+    }
 
-        // Step 2 - Set up the client for API calls with the plugin for offline storage
+    // Muestra un mensaje Toast simplificado
+    private void showToast(String message) {
+        Toast.makeText(LoginActivity.this, message, Toast.LENGTH_SHORT).show();
+    }
+
+    // Inicia el proceso de autenticación de Google Sign-In
+    private void signIn() {
+        Intent signInIntent = mGoogleSignInClient.getSignInIntent();
+        startActivityForResult(signInIntent, RC_SIGN_IN);
+    }
+
+    // Gestiona el resultado de la actividad para Google Sign-In
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == RC_SIGN_IN) {
+            Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(data);
+            handleSignInResult(task);
+        }
+    }
+
+    // Gestiona el resultado de Google Sign-In
+    private void handleSignInResult(Task<GoogleSignInAccount> completedTask) {
+        try {
+            GoogleSignInAccount account = completedTask.getResult(ApiException.class);
+            Log.d(TAG, "firebaseAuthWithGoogle: " + account.getId());
+            firebaseAuthWithGoogle(account.getIdToken());
+        } catch (ApiException e) {
+            Log.w(TAG, "Google sign in failed: " + e.getStatusCode(), e);
+        }
+    }
+
+    // Autentica el usuario con Firebase usando Google Sign-In
+    private void firebaseAuthWithGoogle(String idToken) {
+        progressDialog.show();
+        signInButton.setVisibility(View.GONE);
+
+        AuthCredential credential = GoogleAuthProvider.getCredential(idToken, null);
+        mAuth.signInWithCredential(credential)
+                .addOnCompleteListener(this, task -> {
+                    progressDialog.dismiss();
+                    if (task.isSuccessful()) {
+                        Log.d(TAG, "signInWithCredential:success");
+                        FirebaseUser user = mAuth.getCurrentUser();
+                        if (user != null) {
+                            createUserChat(user);
+                            navigateToMainActivity();
+                        }
+                    } else {
+                        Log.w(TAG, "signInWithCredential:fa|re", task.getException());
+                        signInButton.setVisibility(View.VISIBLE);
+                        showToast("Autenticación fallida");
+                    }
+                });
+    }
+
+    // Crea el chat del usuario usando Stream
+    private void createUserChat(FirebaseUser userChat) {
         ChatClient client = new ChatClient.Builder("7r7sx9khusmb", getApplicationContext())
-                .withPlugins(streamOfflinePluginFactory, streamStatePluginFactory)
-                .logLevel(ChatLogLevel.ALL) // Set to NOTHING in prod
+                .withPlugins(
+                        new StreamOfflinePluginFactory(getApplicationContext()),
+                        new StreamStatePluginFactory(new StatePluginConfig(true, true), getApplicationContext())
+                )
+                .logLevel(ChatLogLevel.ALL) // Establecer en NOTHING en producción
                 .build();
 
         User user = new User.Builder()
                 .withId(userChat.getUid())
-                .withName(userChat.getDisplayName().toString())
+                .withName(userChat.getDisplayName())
                 .withImage(userChat.getPhotoUrl().toString())
                 .build();
 
-        client.connectUser(
-                user,
-                client.devToken(user.getId())
-        ).enqueue();
+        client.connectUser(user, client.devToken(user.getId())).enqueue();
     }
 
+    // Navega a la pantalla principal
+    private void navigateToMainActivity() {
+        Intent intent = new Intent(LoginActivity.this, MainActivity.class);
+        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
+        startActivity(intent);
+        finish();
+    }
+
+    // Actualiza la interfaz de usuario dependiendo del estado de autenticación
     private void updateUI(FirebaseUser currentUser) {
         if (currentUser != null) {
-            startActivity(new Intent(LoginActivity.this, MainActivity.class));
-            finish();
+            navigateToMainActivity();
         } else {
             signInButton.setVisibility(View.VISIBLE);
         }
+    }
+
+    // Navega a la pantalla de registro
+    public void onLoginClick(View view) {
+        startActivity(new Intent(this, RegisterActivity.class));
+        overridePendingTransition(R.anim.slide_in_right, android.R.anim.slide_out_right);
     }
 }
